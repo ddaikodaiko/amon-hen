@@ -54,12 +54,13 @@ description: "Tareas de Vigía v1, por historia de usuario"
   - los scripts de `contracts/cli.md` (`demo`, `ingest`, `server`, `eval`, `brief`, `record`, `demo:build`, `test`), cada uno apuntando a su `src/cli/*.ts`;
 
   Crear `.env.example` con todas las variables de `contracts/cli.md`, sin valores.
-- [ ] T004 [clase] Crear el panel en `panel/`:
+- [x] T004 [clase] Crear el panel en `panel/`:
   - SvelteKit con `@sveltejs/adapter-static` (`fallback: "index.html"`), `maplibre-gl` y TypeScript estricto;
   - un workspace de Bun (`"workspaces": ["panel"]` en el `package.json` raíz), para que baste un solo `bun install`;
   - layout en inglés con la navegación (Map, Cases, Label, Eval, Briefs, Health) y el aviso "Educational project, no warranty" (FR-027).
 
   **Hecho:** `bun run --cwd panel build` genera `panel/build`.
+  **Hecho (2026-10-19), con SvelteKit 3.1:** la configuración va en `vite.config.ts` (ya no hay `svelte.config.js`), el `tsconfig` extiende `$app/tsconfig` y el panel usa TypeScript 6, porque SvelteKit 3 aún no admite el 7 (la raíz sí lo usa). Las vistas son marcadores hasta sus tareas.
 - [ ] T005 [P] [clase] Crear dos archivos de datos:
   - `data/region.json`: la caja de la región de Assumptions, más `border_margin_nm: 2`;
   - `data/ports.geojson`: polígonos de las dársenas y los amarres de Helsinki (Eteläsatama, Länsisatama, Vuosaari), Porvoo-Sköldvik, Loviisa, Kotka-Hamina (Mussalo, Hietanen), Tallinn (Vanasadam, Muuga, Paljassaare), Paldiski, Sillamäe, Ust-Luga, Primorsk, Vysotsk y San Petersburgo, dibujados a mano (geojson.io), cada uno con `properties.name` y `kind: "berth"`. Sin fondeaderos (clarificación 3).

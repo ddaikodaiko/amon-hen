@@ -1,0 +1,88 @@
+:root {
+  --bg: #0b1015;
+  --panel: #111820;
+  --line: #1f2a35;
+  --text: #dfe6ee;
+  --muted: #7f8c99;
+  --accent: #4ea1ff;
+  --danger: #ff3b3b;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 system-ui, sans-serif;
+}
+
+/* app.html wraps the app in a display: contents div, so body lays out header, main and footer. */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 24px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.brand {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.brand span {
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--muted);
+  margin-left: 6px;
+}
+
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+nav a {
+  padding: 4px 10px;
+  border-radius: 6px;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+nav a:hover {
+  color: var(--text);
+}
+
+nav a[aria-current="page"] {
+  color: var(--text);
+  background: var(--line);
+}
+
+main {
+  flex: 1;
+  padding: 16px;
+}
+
+footer {
+  padding: 8px 16px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
