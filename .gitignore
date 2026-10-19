@@ -1,0 +1,15 @@
+# Dependencias y builds
+node_modules/
+panel/build/
+panel/.svelte-kit/
+
+# Secretos
+.env
+.env.*
+!.env.example
+
+# Datos locales (la demo en demo/ sí se versiona)
+data/*.sqlite
+data/*.sqlite-*
+data/raw/
+*.ndjson.gz
