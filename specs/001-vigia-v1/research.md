@@ -14,6 +14,11 @@ Fecha: 2026-10-19. Cada punto sigue el formato Decisión / Por qué / Alternativ
   - Un cliente OpenAI-compatible para Ollama y FreeLLMAPI: serían dos caminos de código y dos formatos de traza.
   - El Claude Agent SDK: trae herramientas de sistema que aquí sobran y oculta el bucle que queremos enseñar.
 
+- **Comprobado (2026-10-19, prueba de humo del portátil al PC por Tailscale):** con `@anthropic-ai/sdk` 0.135 y el `baseURL` apuntando a Ollama 0.40.4, `qwen3:8b` hace tool use: devuelve `stop_reason: tool_use`, bloques `tool_use` y `usage`, y respeta `thinking: {type: "disabled"}`. La primera llamada en frío tarda ~113 s, porque carga el modelo en la VRAM. En caliente, cada paso tarda entre 4 y 13 s (~70 tokens/s de salida), con el modelo entero en la GPU (5,6 GB). Hay que tener en cuenta tres cosas:
+  - **El contexto por defecto es de 4.096 tokens** (lo dice `ollama ps`). Una investigación con rastros lo supera, y Ollama recorta sin avisar. Hay que subirlo, por ejemplo con `OLLAMA_CONTEXT_LENGTH=16384`, `OLLAMA_FLASH_ATTENTION=1` y `OLLAMA_KV_CACHE_TYPE=q8_0` para que quepa en 8 GB, y mantener compactas las salidas de las herramientas **[fijar en T031]**.
+  - **El `usage.input_tokens` de Ollama solo cuenta lo que no reaprovecha de su caché** (en una llamada repetida dio 4 tokens). Por eso los tokens locales no se pueden comparar tal cual con los de la API de pago. La traza guarda el valor tal como llega, y el eval compara costes, no tokens.
+  - **El modelo se inventa índices de paso** en `evidence`: citó los pasos 2 y 3, que no existían. La validación de `submit_verdict` contra la traza (R4) es imprescindible.
+
 ## R2. Modelo local: qwen3 8B como punto de partida, con una prueba de varios modelos
 
 - **Decisión:** se empieza con un modelo de 7-9B con llamadas a herramientas y cuantización Q4. Ocupa ~5 GB y cabe entero en los 8 GB de la RTX 3060 Ti, con margen para el contexto. El candidato inicial es `qwen3:8b`. La tarea de comparación prueba también `llama3.1:8b` y `granite3.3:8b` sobre los mismos 10 casos de humo y se queda con el que más expedientes válidos produce **[verificar en T0xx]**.
