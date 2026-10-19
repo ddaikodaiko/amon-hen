@@ -40,6 +40,7 @@ description: "Tareas de Vigía v1, por historia de usuario"
   - `src/ingest/raw-archive.ts`: una línea por mensaje, `{t: recibido_ms, m: {topic, data}}`, y líneas de evento, `{t, ev: "open"|"close"|"error", detail?}`, en `data/raw/YYYY-MM-DD/HH.ndjson`. Al cambiar de hora, comprime el archivo a `.ndjson.gz` con zlib en streaming (sin bloquear la ingesta) y borra el original. Al arrancar, comprime las horas anteriores que quedaran sin comprimir;
   - `src/cli/ingest.ts`: no necesita key. Cada minuto imprime los mensajes y los barcos por minuto;
   - `deploy/vigia-ingest.service`: unidad de usuario de systemd con `Restart=always` (con `loginctl enable-linger`, para que arranque sin sesión abierta).
+  **Estado (2026-10-19):** mientras la Pi no esté, la grabadora corre en el portátil como servicio de usuario temporal (`systemctl --user status vigia-ingest-laptop`; se pierde al reiniciar el portátil). Desde las 17:24 UTC escribe también en `data/vigia.sqlite`. Lo de antes se importó con `--from-archive`.
 
   La primera versión, contra aisstream (commit `806a157`), sirvió para medir que el Estrecho no daba datos suficientes (R7).
   **Hecho:** graba en el portátil (prueba) y, con la Pi lista, como servicio en la Pi, que sigue grabando tras un `systemctl --user restart`. Mientras la Pi no esté, se puede dejar grabando el portátil para medir el volumen.
@@ -64,7 +65,11 @@ description: "Tareas de Vigía v1, por historia de usuario"
 - [ ] T005 [P] [clase] Crear dos archivos de datos:
   - `data/region.json`: la caja de la región de Assumptions, más `border_margin_nm: 2`;
   - `data/ports.geojson`: polígonos de las dársenas y los amarres de Helsinki (Eteläsatama, Länsisatama, Vuosaari), Porvoo-Sköldvik, Loviisa, Kotka-Hamina (Mussalo, Hietanen), Tallinn (Vanasadam, Muuga, Paljassaare), Paldiski, Sillamäe, Ust-Luga, Primorsk, Vysotsk y San Petersburgo, dibujados a mano (geojson.io), cada uno con `properties.name` y `kind: "berth"`. Sin fondeaderos (clarificación 3).
-  **Hecho en parte (2026-10-19):** `data/region.json` está. Falta `data/ports.geojson`.
+  **Estado (2026-10-19):** `data/region.json` está hecho. `data/ports.geojson` es un **borrador**, generado desde OSM con `scripts/ports-from-osm.ts`: 177 polígonos (zonas portuarias e industriales, más los muelles de Primorsk y Vysotsk), ampliados 150 m hacia el agua. Medido contra los barcos parados de la primera hora:
+  - Solo 77 de los 131 barcos que se declaran amarrados caen dentro. Faltan los muelles urbanos de Helsinki (rompehielos y remolcadores en Pohjoissatama y Katajanokka), Tammisaari, Inkoo y otros puertos pequeños.
+  - 3 de los 87 barcos fondeados caen dentro por error (Lugaport en Ust-Luga, Vysotsk y Vyborg).
+  - El script ya amplía la consulta (muelles y `quay` de todo el golfo, dársenas, marinas y los puertos y atraques de OpenSeaMap), pero no se ha podido ejecutar: Overpass estaba saturado. **Siguiente paso:** ejecutarlo, repetir la medición y repasar en un mapa los casos que fallen. Si los muelles urbanos siguen fuera, decidir si se añade la regla "parado y a menos de 150 m de tierra" (necesita `land.geojson`).
+  - Los datos derivados de OSM van con licencia ODbL y la atribución dentro del archivo.
 
 ---
 

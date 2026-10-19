@@ -110,6 +110,8 @@ Fecha: 2026-10-19. Cada punto sigue el formato Decisión / Por qué / Alternativ
   La investigación se dispara cuando el barco reaparece o cuando el gap cumple 6 h.
 - **Por qué:** la constitución dice que las reglas detectan y el agente investiga. La spec fija los umbrales en las clarificaciones.
 
+- **Comprobado (2026-10-19):** OSM tiene bien etiquetados los puertos grandes, pero no los muelles urbanos ni los puertos pequeños. Con solo las zonas portuarias, quedan fuera ~4 de cada 10 barcos amarrados (detalle en T005). El borrador de `ports.geojson` sale de `scripts/ports-from-osm.ts`, y hay que revisarlo a mano antes de usarlo en el detector.
+
 ## R9. Global Fishing Watch: una herramienta, nunca la verdad del eval
 
 - **Decisión:** la herramienta `get_gfw_events` consulta `gateway.api.globalfishingwatch.org/v3/events` con un token Bearer gratuito, buscando eventos de gaps, encounters y loitering de un MMSI en una ventana de tiempo. Si falla o tarda, devuelve `unavailable` y el agente sigue (FR-012).
