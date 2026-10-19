@@ -86,7 +86,9 @@ Fecha: 2026-10-19. Cada punto sigue el formato Decisión / Por qué / Alternativ
 - **Formato** (visto el 2026-10-19): el MMSI va en el topic.
   - `location`: `lat`, `lon`, `sog`, `cog`, `heading`, `navStat`, `rot`, `posAcc`, `raim` y `time` (Unix, en segundos).
   - `metadata`: `name`, `callSign`, `imo`, `destination`, `draught`, `eta`, `type`, `posType`, `refA`-`refD` y `timestamp` (en ms).
-- **Clase A o B:** Digitraffic no la da. Regla de partida: es clase A si su metadata trae `imo`, `eta` o `draught`, que solo emite el mensaje 5 (clase A). Si no se sabe, clase B, con el umbral largo (60 min), que da menos falsos positivos **[verificar en T009]**.
+- **Clase A o B:** Digitraffic no la da. Regla de partida: es clase A si su metadata trae `imo`, `eta` o `draught`, que solo emite el mensaje 5 (clase A). Si no se sabe, clase B, con el umbral largo (60 min), que da menos falsos positivos.
+  - **Comprobado (2026-10-19, 10 min):** los 59 barcos en marcha con esa metadata emiten cada 15 s o menos, como corresponde a la clase A. La REST `/api/ais/v1/vessels` da metadata de unos 940 barcos, y solo 9 sin `imo`, `eta` ni `draught` (salvamento, prácticos, avisos). O sea: **Digitraffic publica metadata casi solo de clase A**.
+  - **Consecuencia:** sin metadata, el barco es clase B, salvo justo después de arrancar, porque la metadata por MQTT llega solo cuando el barco la emite (cada ~6 min). Por eso la ingesta carga la metadata completa por REST al arrancar. Con eso, en el golfo hay 933 barcos de clase A y 13 de B **[revisar con las 24 h de T002]**.
 - **Por qué:** es la fuente gratuita con mejor cobertura medida (abajo), no pide key, y su licencia (CC BY 4.0) permite publicar la demo y el set del eval con atribución.
 - **Alternativa descartada: aisstream en el Estrecho de Gibraltar**, la región original. La grabadora de T001 se escribió primero contra aisstream (commit `806a157`) y sirvió para medirlo:
   - **Comprobado:** el cliente WebSocket de Bun negocia `permessage-deflate`, y aisstream responde `CompressionEnabled: true`. No hace falta el paquete `ws`.

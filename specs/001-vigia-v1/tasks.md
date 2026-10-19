@@ -49,7 +49,7 @@ description: "Tareas de Vigía v1, por historia de usuario"
   - barcos distintos en el golfo, y cuántos en el extremo ruso (al este de 28° E).
 
   Anotarlo en `specs/001-vigia-v1/research.md` (R5 y R7) y quitar sus **[verificar en T001]**. Copiar las 24 h del archivo al portátil, en `data/raw/` (fuera de git), para desarrollar en clase sin la Pi. Con 2 h no saldrían los 10 candidatos de la prueba de modelos (T033). Las pruebas siguen con fixtures sintéticas.
-- [ ] T003 [clase] Completar `package.json`:
+- [x] T003 [clase] Completar `package.json`:
   - `bun add @anthropic-ai/sdk zod` (zod v4, para `z.toJSONSchema`);
   - los scripts de `contracts/cli.md` (`demo`, `ingest`, `server`, `eval`, `brief`, `record`, `demo:build`, `test`), cada uno apuntando a su `src/cli/*.ts`;
 
@@ -63,6 +63,7 @@ description: "Tareas de Vigía v1, por historia de usuario"
 - [ ] T005 [P] [clase] Crear dos archivos de datos:
   - `data/region.json`: la caja de la región de Assumptions, más `border_margin_nm: 2`;
   - `data/ports.geojson`: polígonos de las dársenas y los amarres de Helsinki (Eteläsatama, Länsisatama, Vuosaari), Porvoo-Sköldvik, Loviisa, Kotka-Hamina (Mussalo, Hietanen), Tallinn (Vanasadam, Muuga, Paljassaare), Paldiski, Sillamäe, Ust-Luga, Primorsk, Vysotsk y San Petersburgo, dibujados a mano (geojson.io), cada uno con `properties.name` y `kind: "berth"`. Sin fondeaderos (clarificación 3).
+  **Hecho en parte (2026-10-19):** `data/region.json` está. Falta `data/ports.geojson`.
 
 ---
 
@@ -72,40 +73,45 @@ description: "Tareas de Vigía v1, por historia de usuario"
 
 **⚠️ CRITICAL**: ninguna historia empieza antes de terminar esta fase.
 
-- [ ] T006 [clase] `src/config.ts`: lee el entorno (Bun carga `.env`), lo valida con zod y exporta:
+- [x] T006 [clase] `src/config.ts`: lee el entorno (Bun carga `.env`), lo valida con zod y exporta:
   - la región y los umbrales (30 min, 60 min, 6 h y caída de 2 min o más);
   - el puerto 4250, el modo y la ruta de la base;
   - los perfiles `local | haiku | sonnet`, con `baseURL`, `model` y precios por MTok (R1).
 
   Por defecto, `VIGIA_BUDGET_USD=0` y `VIGIA_ESCALATE_PROFILE=none`.
-- [ ] T007 [clase] `src/db/schema.sql`, con todas las tablas e índices de `data-model.md`, y `src/db/index.ts`. `openDb(path)` usa `bun:sqlite` con `journal_mode=WAL` y `busy_timeout=5000` (escriben dos procesos), y migra con `PRAGMA user_version`. Prueba en `tests/unit/db.test.ts` sobre `:memory:`: crear el esquema dos veces no da error.
-- [ ] T008 [P] [clase] `src/geo/`:
+- [x] T007 [clase] `src/db/schema.sql`, con todas las tablas e índices de `data-model.md`, y `src/db/index.ts`. `openDb(path)` usa `bun:sqlite` con `journal_mode=WAL` y `busy_timeout=5000` (escriben dos procesos), y migra con `PRAGMA user_version`. Prueba en `tests/unit/db.test.ts` sobre `:memory:`: crear el esquema dos veces no da error.
+  **Nota:** se añadió la tabla `meta` (clave y valor) para el estado que debe sobrevivir a un reinicio, como hasta dónde están cerrados los minutos de salud.
+- [x] T008 [P] [clase] `src/geo/`:
   - `grid.ts`: rejilla de 0,025° sobre la región, con `cellId(lat, lon)`, `cellBounds(id)` y las celdas vecinas;
   - `haversine.ts`: distancia en millas náuticas y rumbo inicial;
   - `polygons.ts`: punto dentro de polígono para `ports.geojson`, y `headingOut(lat, lon, cog)`, que es cierto si el barco está a menos de `border_margin_nm` del borde con rumbo hacia fuera;
   - `mid.ts`: tabla MID → país.
 
   Pruebas en `tests/unit/geo.test.ts` con puntos conocidos (un punto del puerto de Vuosaari está dentro; uno en mitad del golfo, no).
-- [ ] T009 [P] [clase] `src/ingest/parse.ts` convierte un mensaje de Digitraffic (`{topic, data}`, formato en R7) en uno de dos tipos:
+- [x] T009 [P] [clase] `src/ingest/parse.ts` convierte un mensaje de Digitraffic (`{topic, data}`, formato en R7) en uno de dos tipos:
   - `{kind: "position", mmsi, ts, lat, lon, sog, cog, heading, nav_status, ais_class}`;
   - `{kind: "static", mmsi, name, callsign, imo, ship_type, length_m, width_m, destination, ais_class}`.
+  **Hecho (2026-10-19), con un cambio:** la posición no lleva `ais_class`, porque un mensaje de posición no la dice. La clase vive en `vessels`: es B hasta que llega la metadata, y la metadata decide. Comprobado sobre 10 min: los 59 barcos en marcha con metadata de clase A emiten cada 15 s o menos. Pero Digitraffic solo publica metadata de clase A, y la manda cuando el barco la emite, así que nada más arrancar muchos de clase A parecían B. Por eso la ingesta carga al arrancar la metadata completa por REST (`/api/ais/v1/vessels`, unos 940 barcos), y la archiva marcada con `src: "rest"`. Revisar con las 24 h de T002.
 
   `ts` es la hora de recepción. El MMSI sale del topic. Es clase A si la metadata del barco trae `imo`, `eta` o `draught`; si no se sabe, clase B (R7). Antes de fijar la regla, comprobarla sobre la muestra de T002: los de clase B emiten cada 30 s en marcha, y los de clase A, cada 10 s o menos. Descarta las lat/lon fuera de rango, la posición (0,0) y los MMSI que no tienen 9 dígitos. Pruebas en `tests/unit/parse.test.ts` con mensajes sintéticos en `tests/fixtures/ais/messages.json`: uno de cada tipo y varios no válidos.
-- [ ] T010 [clase] Dos funciones de procesado, en `src/ingest/pipeline.ts`:
+- [x] T010 [clase] Dos funciones de procesado, en `src/ingest/pipeline.ts`:
   - `applyMessage(db, msg)`: actualiza o inserta en `vessels`, guarda en `positions` como mucho una posición cada 30 s por barco y suma en `ingest_minutes`;
   - `applyEvent(db, ev)`: registra los eventos `open` y `close`.
+  **Nota:** `ingestRaw(db, topic, data, ts)` cuenta cualquier mensaje para la salud (también los no válidos) y luego lo procesa. Las caídas guardan la causa: `no_messages` o `disconnected`. La ingesta en vivo ya escribe en SQLite y cierra los minutos cada 60 s.
 
   `src/ingest/health.ts`: `closeMinutes(db, now)` marca como `outage` cualquier periodo de 2 minutos seguidos o más sin mensajes, o con la conexión caída (FR-002). Pruebas en `tests/unit/pipeline.test.ts`:
   - la reducción a 30 s;
   - una caída de 3 min queda registrada;
   - 1 minuto sin mensajes no es caída.
-- [ ] T011 [clase] Importar el archivo crudo con `bun run ingest --from-archive data/raw [--from ISO --to ISO]`. Lee los `.ndjson` y `.ndjson.gz` en orden y los pasa por `pipeline.ts`. Así se trabaja en clase sobre la muestra de T002, sin la Pi. La opción ya está en `contracts/cli.md`.
+- [x] T011 [clase] Importar el archivo crudo con `bun run ingest --from-archive data/raw [--from ISO --to ISO]`. Lee los `.ndjson` y `.ndjson.gz` en orden y los pasa por `pipeline.ts`. Así se trabaja en clase sobre la muestra de T002, sin la Pi. La opción ya está en `contracts/cli.md`.
   **Hecho:** la muestra de 24 h carga en `data/vigia.sqlite`, y el recuento de `positions` cuadra con la reducción a 30 s.
-- [ ] T012 [clase] `src/server/app.ts`: `Bun.serve` en el puerto 4250 con:
+  **Comprobado** con la primera hora grabada en el portátil (27.000 mensajes en 0,2 s). Falta repetirlo con las 24 h de T002.
+- [x] T012 [clase] `src/server/app.ts`: `Bun.serve` en el puerto 4250 con:
   - un router mínimo y errores `{error: {code, message}}` (400, 403 y 404);
   - la guarda de modo: en `replay` y en `public`, responde 403 a todo lo marcado ✎ en `contracts/http-api.md`. En `replay` sí permite `POST /api/replay/speed`;
   - los estáticos de `panel/build`, con `index.html` como fallback;
   - `GET /api/meta`.
+  **Nota:** en modo `live` escucha solo en `127.0.0.1`; en `replay` y `public`, en todas las interfaces.
 
   `src/cli/server.ts` arranca el servidor. Prueba en `tests/integration/server-modes.test.ts`: una ruta ✎ de prueba da 403 en `public` y en `replay`, y 200 en `live`.
 

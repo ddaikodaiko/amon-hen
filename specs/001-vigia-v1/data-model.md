@@ -29,7 +29,7 @@ Todo se guarda en una base SQLite (`bun:sqlite`, modo WAL). Las horas son UTC en
 
 ### ingest_minutes y outages: salud de la ingesta (FR-002, FR-006, FR-017)
 - `ingest_minutes(minute_ts PK, connected INTEGER, msg_count INTEGER)`
-- `outages(id PK, start_ts, end_ts NULL, cause TEXT NULL)`
+- `outages(id PK, start_ts, end_ts NULL, cause TEXT NULL)`. `cause` es `no_messages` o `disconnected`.
 - **Regla:** 2 minutos seguidos o más con `msg_count = 0`, o la conexión caída, cuentan como una `outage`. Tiene `end_ts` NULL mientras dura.
 
 ### coverage: cobertura por celda y hora (FR-004)
@@ -105,6 +105,9 @@ Todo se guarda en una base SQLite (`bun:sqlite`, modo WAL). Las horas son UTC en
 
 ### budget (FR-011)
 - `budget(month PK 'YYYY-MM', spent_usd REAL, cap_usd REAL)`. El tope por defecto es 0, que impide cualquier gasto de pago.
+
+### meta
+- `meta(key PK, value)`: estado pequeño que debe sobrevivir a un reinicio, como `health_closed_until` (hasta dónde están cerrados los minutos de salud).
 
 ### recordings (FR-003, FR-024)
 - `recordings(id PK, start_ts, end_ts, kind TEXT, path TEXT)`. `kind` es `raw_archive`, `demo` o `eval`.
