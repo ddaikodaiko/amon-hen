@@ -1,0 +1,16 @@
+{
+  "name": "vigia",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "ingest": "bun run src/cli/ingest.ts",
+    "test": "bun test",
+    "check": "tsc --noEmit && bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.3",
+    "typescript": "^7.0.2"
+  }
+}

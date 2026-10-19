@@ -1,0 +1,20 @@
+# Vigía: AIS ingest (aisstream -> data/raw), as a systemd user unit on the Pi.
+#
+#   mkdir -p ~/.config/systemd/user && cp deploy/vigia-ingest.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now vigia-ingest
+#   sudo loginctl enable-linger "$USER"     # start at boot, without a login session
+#   journalctl --user -u vigia-ingest -f
+#
+# Expects the repo at ~/vigia with AISSTREAM_KEY in ~/vigia/.env (Bun loads it from the working directory).
+
+[Unit]
+Description=Vigía AIS ingest
+
+[Service]
+WorkingDirectory=%h/vigia
+ExecStart=%h/.bun/bin/bun run src/cli/ingest.ts
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

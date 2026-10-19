@@ -79,7 +79,14 @@ Fecha: 2026-10-19. Cada punto sigue el formato Decisión / Por qué / Alternativ
   - Se reconecta con espera exponencial.
   - Registra la salud por minuto. Un periodo de 2 minutos o más sin mensajes es una caída propia (FR-002).
 - **Por qué:** la documentación de aisstream exige un backend (no admite conexiones desde el navegador), el bounding box y la suscripción rápida.
-- **Riesgo:** la documentación pide la compresión `permessage-deflate`, y no está comprobado que el cliente de Bun la negocie. Si no lo hace, se usa el paquete `ws` **[verificar en T001]**.
+- **Comprobado en T001 (2026-10-19):** el cliente WebSocket de Bun negocia `permessage-deflate`, y aisstream responde `CompressionEnabled: true`. No hace falta el paquete `ws`.
+- **Medido en T001 (2026-10-19, 17,7 min desde el portátil):**
+  - **8,9 posiciones por minuto y 52 barcos distintos** en todo el Estrecho;
+  - los barcos en marcha llegan, en mediana, cada 90 s (p10: 53 s; p90: 390 s), así que aisstream da como mucho ~1 mensaje por barco y minuto;
+  - casi todo viene de la orilla sur (Tánger Med y Ceuta), y de la bahía de Algeciras y Gibraltar no llega casi nada;
+  - en el mismo minuto, Rotterdam dio 206 mensajes por minuto.
+- **Alternativa medida el mismo día:** Digitraffic (Finlandia), con datos abiertos CC BY 4.0, sin key y en vivo por MQTT sobre WebSocket. En 3 min dio **1.285 mensajes por minuto y 415 barcos solo en el golfo de Finlandia**, con barcos en marcha cada 9 s de mediana.
+- **Conclusión:** con aisstream, el Estrecho no tiene cobertura suficiente para detectar barcos oscuros. Casi todo gap sería un hueco de cobertura. Hay que decidir región y fuente antes de T002.
 
 ## R8. Detector y exclusiones
 
