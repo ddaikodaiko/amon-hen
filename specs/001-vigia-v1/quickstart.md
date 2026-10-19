@@ -9,7 +9,7 @@ bun run demo          # → http://localhost:4250
 ```
 
 **Comprobación (SC-001):**
-1. En el mapa se mueven los barcos del Estrecho.
+1. En el mapa se mueven los barcos del golfo de Finlandia.
 2. Abres un caso de la lista y ves su expediente con la traza.
 3. Pulsas una prueba citada y salta a su paso.
 4. Ves el brief y la página del eval.
@@ -19,7 +19,7 @@ Todo en 5 minutos o menos.
 ## 2. Montarlo en vivo (Pi 5 + PC de casa)
 
 **Una sola vez:**
-1. **Key de aisstream** (gratis), en aisstream.io.
+1. **AIS:** nada que pedir. Digitraffic no usa key.
 2. **Token de GFW** (gratis, solo uso no comercial), en globalfishingwatch.org/our-apis.
 3. **En el PC de casa (RTX 3060 Ti):**
    - instalar Ollama y descargar el modelo: `ollama pull qwen3:8b`;

@@ -2,7 +2,7 @@
 description: "Tareas de Vigía v1, por historia de usuario"
 ---
 
-# Tasks: Vigía v1, un agente que investiga barcos oscuros en el Estrecho de Gibraltar
+# Tasks: Vigía v1, un agente que investiga barcos oscuros en el golfo de Finlandia
 
 **Input**: documentos de diseño en `specs/001-vigia-v1/`
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/, quickstart.md
@@ -23,7 +23,6 @@ description: "Tareas de Vigía v1, por historia de usuario"
 
 | Qué | Para | Cuándo |
 |---|---|---|
-| Key gratuita de aisstream.io | T001 | Ya |
 | La Pi 5 reformateada: Raspberry Pi OS Lite de 64 bits, SSH, Tailscale y Bun | T001 (despliegue), T064 | En el primer bloque en casa |
 | PC: Tailscale, Ollama con `OLLAMA_HOST=0.0.0.0`, `ollama pull qwen3:8b` | T031, T033 | Antes de T031 |
 | Token gratuito de Global Fishing Watch | T032 | Antes de T032 |
@@ -36,20 +35,20 @@ description: "Tareas de Vigía v1, por historia de usuario"
 
 - [ ] T001 [bloque] Grabadora AIS mínima en la Pi. Crear:
   - `package.json` (Bun, `"type": "module"`, scripts `ingest`, `test` y `check`, y de desarrollo `typescript` y `@types/bun`) y `tsconfig.json` con `strict`;
-  - `src/ingest/aisstream.ts`: WebSocket a `wss://stream.aisstream.io/v0/stream`. Manda la suscripción en menos de 3 s con `APIKey`, `BoundingBoxes: [[[35.70, -6.20], [36.30, -5.00]]]` y los 5 `FilterMessageTypes` de R7. Se reconecta con espera exponencial (de 1 s a 60 s), y fuerza la reconexión si pasan 2 min sin mensajes;
-  - `src/ingest/raw-archive.ts`: una línea por mensaje, `{t: recibido_ms, m: mensaje}`, y líneas de evento, `{t, ev: "open"|"close"|"error", detail?}`, en `data/raw/YYYY-MM-DD/HH.ndjson`. Al cambiar de hora, comprime el archivo a `.ndjson.gz` con zlib en streaming (sin bloquear la ingesta) y borra el original. Al arrancar, comprime las horas anteriores que quedaran sin comprimir;
-  - `src/cli/ingest.ts`: lee `AISSTREAM_KEY` del `.env`. Cada minuto imprime los mensajes por minuto y si `ws.extensions` incluye `permessage-deflate`;
+  - `src/ingest/mqtt.ts`: el subconjunto de MQTT 3.1.1 que hace falta (CONNECT, SUBSCRIBE, PUBLISH con QoS 0 y PINGREQ) y un lector de paquetes que aguanta paquetes partidos o pegados entre mensajes del WebSocket;
+  - `src/ingest/digitraffic.ts`: WebSocket a `wss://meri.digitraffic.fi:443/mqtt` (subprotocolo `mqtt`). Tras el CONNACK se suscribe a `vessels-v2/+/location` y `vessels-v2/+/metadata`, y manda PINGREQ cada 30 s. Se reconecta con espera exponencial (de 1 s a 60 s), y fuerza la reconexión si pasan 2 min sin mensajes;
+  - `src/ingest/raw-archive.ts`: una línea por mensaje, `{t: recibido_ms, m: {topic, data}}`, y líneas de evento, `{t, ev: "open"|"close"|"error", detail?}`, en `data/raw/YYYY-MM-DD/HH.ndjson`. Al cambiar de hora, comprime el archivo a `.ndjson.gz` con zlib en streaming (sin bloquear la ingesta) y borra el original. Al arrancar, comprime las horas anteriores que quedaran sin comprimir;
+  - `src/cli/ingest.ts`: no necesita key. Cada minuto imprime los mensajes y los barcos por minuto;
   - `deploy/vigia-ingest.service`: unidad de usuario de systemd con `Restart=always` (con `loginctl enable-linger`, para que arranque sin sesión abierta).
 
-  Si Bun no negocia `permessage-deflate` y aisstream lo exige, se cambia al paquete `ws` (R7).
+  La primera versión, contra aisstream (commit `806a157`), sirvió para medir que el Estrecho no daba datos suficientes (R7).
   **Hecho:** graba en el portátil (prueba) y, con la Pi lista, como servicio en la Pi, que sigue grabando tras un `systemctl --user restart`. Mientras la Pi no esté, se puede dejar grabando el portátil para medir el volumen.
 - [ ] T002 [bloque] Con 24 h grabadas, medir:
   - mensajes por segundo (media y pico);
   - MB por hora, ya comprimidos;
-  - barcos distintos;
-  - si hubo compresión `permessage-deflate`.
+  - barcos distintos en el golfo, y cuántos en el extremo ruso (al este de 28° E).
 
-  Anotarlo en `specs/001-vigia-v1/research.md` (R5 y R7) y quitar sus **[verificar en T001]**. Copiar las 24 h del archivo al portátil, en `data/raw/` (fuera de git), para desarrollar en clase sin la Pi. Con 2 h no saldrían los 10 candidatos de la prueba de modelos (T033). Los datos reales no entran en `tests/`, porque los términos de aisstream aún no están comprobados (T045).
+  Anotarlo en `specs/001-vigia-v1/research.md` (R5 y R7) y quitar sus **[verificar en T001]**. Copiar las 24 h del archivo al portátil, en `data/raw/` (fuera de git), para desarrollar en clase sin la Pi. Con 2 h no saldrían los 10 candidatos de la prueba de modelos (T033). Las pruebas siguen con fixtures sintéticas.
 - [ ] T003 [clase] Completar `package.json`:
   - `bun add @anthropic-ai/sdk zod` (zod v4, para `z.toJSONSchema`);
   - los scripts de `contracts/cli.md` (`demo`, `ingest`, `server`, `eval`, `brief`, `record`, `demo:build`, `test`), cada uno apuntando a su `src/cli/*.ts`;
@@ -63,7 +62,7 @@ description: "Tareas de Vigía v1, por historia de usuario"
   **Hecho:** `bun run --cwd panel build` genera `panel/build`.
 - [ ] T005 [P] [clase] Crear dos archivos de datos:
   - `data/region.json`: la caja de la región de Assumptions, más `border_margin_nm: 2`;
-  - `data/ports.geojson`: polígonos de las dársenas y los amarres de Algeciras, Gibraltar, Tánger Med y Ceuta, dibujados a mano (geojson.io), cada uno con `properties.name` y `kind: "berth"`. Sin fondeaderos (clarificación 3).
+  - `data/ports.geojson`: polígonos de las dársenas y los amarres de Helsinki (Eteläsatama, Länsisatama, Vuosaari), Porvoo-Sköldvik, Loviisa, Kotka-Hamina (Mussalo, Hietanen), Tallinn (Vanasadam, Muuga, Paljassaare), Paldiski, Sillamäe, Ust-Luga, Primorsk, Vysotsk y San Petersburgo, dibujados a mano (geojson.io), cada uno con `properties.name` y `kind: "berth"`. Sin fondeaderos (clarificación 3).
 
 ---
 
@@ -86,12 +85,12 @@ description: "Tareas de Vigía v1, por historia de usuario"
   - `polygons.ts`: punto dentro de polígono para `ports.geojson`, y `headingOut(lat, lon, cog)`, que es cierto si el barco está a menos de `border_margin_nm` del borde con rumbo hacia fuera;
   - `mid.ts`: tabla MID → país.
 
-  Pruebas en `tests/unit/geo.test.ts` con puntos conocidos (un punto de la dársena de Algeciras está dentro; Tarifa, no).
-- [ ] T009 [P] [clase] `src/ingest/parse.ts` convierte un mensaje de aisstream en uno de dos tipos:
+  Pruebas en `tests/unit/geo.test.ts` con puntos conocidos (un punto del puerto de Vuosaari está dentro; uno en mitad del golfo, no).
+- [ ] T009 [P] [clase] `src/ingest/parse.ts` convierte un mensaje de Digitraffic (`{topic, data}`, formato en R7) en uno de dos tipos:
   - `{kind: "position", mmsi, ts, lat, lon, sog, cog, heading, nav_status, ais_class}`;
   - `{kind: "static", mmsi, name, callsign, imo, ship_type, length_m, width_m, destination, ais_class}`.
 
-  `ts` es la hora de recepción. Es clase A con `PositionReport` y `ShipStaticData`, y clase B con los informes de clase B y con `StaticDataReport`. Descarta las lat/lon fuera de rango, la posición (0,0) y los MMSI que no tienen 9 dígitos. Pruebas en `tests/unit/parse.test.ts` con mensajes sintéticos en `tests/fixtures/ais/messages.json`: uno de cada tipo y varios no válidos.
+  `ts` es la hora de recepción. El MMSI sale del topic. Es clase A si la metadata del barco trae `imo`, `eta` o `draught`; si no se sabe, clase B (R7). Antes de fijar la regla, comprobarla sobre la muestra de T002: los de clase B emiten cada 30 s en marcha, y los de clase A, cada 10 s o menos. Descarta las lat/lon fuera de rango, la posición (0,0) y los MMSI que no tienen 9 dígitos. Pruebas en `tests/unit/parse.test.ts` con mensajes sintéticos en `tests/fixtures/ais/messages.json`: uno de cada tipo y varios no válidos.
 - [ ] T010 [clase] Dos funciones de procesado, en `src/ingest/pipeline.ts`:
   - `applyMessage(db, msg)`: actualiza o inserta en `vessels`, guarda en `positions` como mucho una posición cada 30 s por barco y suma en `ingest_minutes`;
   - `applyEvent(db, ev)`: registra los eventos `open` y `close`.
@@ -134,8 +133,8 @@ description: "Tareas de Vigía v1, por historia de usuario"
   | Clase B, 70 min | Sí |
   | Gap que se solapa con una caída propia | No (`own_outage`) |
   | Salida por el borde oeste | No (`left_region`) |
-  | Gap que empieza en la dársena de Algeciras | No (`berth`) |
-  | Gap en el fondeadero de Algeciras | Sí |
+  | Gap que empieza en el puerto de Vuosaari | No (`berth`) |
+  | Gap en un fondeadero frente a Kotka | Sí |
   | Gap abierto de 6 h | Sí |
 - [ ] T014 [P] [US1] [clase] `tests/unit/detect.test.ts` sobre T013: los candidatos y los motivos de descarte (`own_outage`, `left_region`, `berth`) son los esperados, y la investigación se dispara al reaparecer el barco o a las 6 h.
 - [ ] T015 [P] [US1] [clase] `tests/unit/coverage.test.ts`: con dos barcos en una celda y un hueco conocido, `received_min / expected_min` da el valor calculado a mano. `sample_ok` es falso con menos de 30 minutos-barco. Un barco fondeado (a menos de 3 nudos) no suma minutos esperados, y la contribución del barco investigado se puede restar (R6).
@@ -182,7 +181,7 @@ description: "Tareas de Vigía v1, por historia de usuario"
 - [ ] T023 [P] [US1] [clase] Herramientas sobre SQLite en `src/agent/tools/`: `get_track.ts`, `get_vessel.ts` (tipo legible a partir del código AIS y bandera a partir del MID) y `get_ingest_health.ts`. Cada una tiene su esquema zod de entrada, su `description` en inglés y una salida con un `summary` en tono de analista (`contracts/agent-tools.md`). `get_track` marca los `identity_conflicts` (posiciones seguidas a más de 50 nudos implícitos). Pruebas en `tests/unit/tools.test.ts`, entre ellas un salto de 40 nm en 5 min.
 - [ ] T024 [P] [US1] [clase] Dos herramientas más:
   - `src/agent/tools/get_coverage.ts`: la celda, su `ratio`, `sample_ok` y la media de las celdas vecinas, restando la contribución del barco investigado (R6);
-  - `src/agent/tools/get_nearby.ts`: los barcos a menos de `radius_nm`, en `±window_min` de `at`, si siguieron emitiendo durante el gap, y los recuentos.
+  - `src/agent/tools/get_nearby.ts`: los barcos a menos de `radius_nm`, en `±window_min` de `at`, si siguieron emitiendo durante el gap, cuántos saltan de posición (`jumping_count`, interferencia GNSS) y los recuentos.
 - [ ] T025 [US1] [clase] `src/agent/tools/submit_verdict.ts`: el esquema zod de `contracts/agent-tools.md`. Comprueba cada `step` contra la traza en curso y hace pasar T016.
   `src/agent/tools/index.ts`: el registro de nombre → esquema zod.
   - El `input_schema` sale de `z.toJSONSchema`.
@@ -192,7 +191,7 @@ description: "Tareas de Vigía v1, por historia de usuario"
   - la hipótesis de partida es un hueco de cobertura;
   - para `likely_dark` hacen falta buena cobertura **y** vecinos que siguieron emitiendo;
   - hay que citar los pasos de la traza;
-  - si hay `identity_conflicts`, no se concluye `coverage_gap` sin otra prueba;
+  - si hay `identity_conflicts`, no se concluye `coverage_gap` sin otra prueba, y si muchos vecinos también saltan, es interferencia GNSS;
   - nunca se buscan personas;
   - se termina siempre con `submit_verdict`.
 - [ ] T027 [US1] [bloque] `src/agent/loop.ts`, el bucle manual de R3:
@@ -266,7 +265,7 @@ description: "Tareas de Vigía v1, por historia de usuario"
   - las marcas de los gaps y la capa de cobertura, que se activa y desactiva;
   - el control de velocidad en replay.
 - [ ] T044 [US2] [clase] En el panel, el botón de reinvestigar está desactivado cuando `/api/meta` dice `replay` o `public`, o cuando no hay modelo. Al lado, el texto de qué hace falta (escenario 3, FR-026).
-- [ ] T045 [US2] [clase] Comprobar si los términos de uso de aisstream permiten redistribuir los datos grabados, y anotar la respuesta en `research.md`. Si no lo permiten, parar y decidir con Marcos antes de T047.
+- [ ] T045 [US2] [clase] Atribución de Digitraffic ("Source: Fintraffic / digitraffic.fi, CC BY 4.0") y de OSM (ODbL) en el pie del panel y en `data/README.md`. Con CC BY 4.0, la demo y el set del eval se pueden publicar.
 - [ ] T046 [US2] [clase] `src/cli/record.ts`: `bun run record --from --to --kind demo|eval --out`. Copia la ventana a una base aparte con sus candidatos, expedientes y trazas. Con `--kind demo`, reduce a una posición por barco y minuto. Registra la fila en `recordings`. Hace pasar T038.
 - [ ] T047 [US2] [bloque] `src/cli/demo-build.ts` (`bun run demo:build --from --to`), en tres pasos:
   1. investiga en la base principal los candidatos de la ventana que aún no tienen expediente;
@@ -408,13 +407,13 @@ description: "Tareas de Vigía v1, por historia de usuario"
   - cómo funciona el agente: el bucle y la traza;
   - las cifras, **solo** las del último informe de eval;
   - los límites y el aviso de proyecto educativo;
-  - las atribuciones (aisstream, GFW de uso no comercial, OSM con ODbL) y la licencia MIT.
+  - las atribuciones (Digitraffic con CC BY 4.0, GFW de uso no comercial, OSM con ODbL) y la licencia MIT.
 - [ ] T073 [clase] SC-008: revisar 10 expedientes al azar y anotar en `specs/001-vigia-v1/review-sc008.md` si cada veredicto se justifica con sus pruebas. Si no, ajustar `system.md`, lo que da una nueva `agent_version`.
 - [ ] T074 [bloque] La comparación de pago (los 10 €): con `VIGIA_BUDGET_USD=10`, `bun run eval --profile haiku` y `--profile sonnet` sobre la misma muestra. Comprobar que con Haiku el coste medio por caso es de 0,01 $ o menos (SC-004).
-- [ ] T075 [clase] Preparar el conjunto del eval (la grabación larga y las etiquetas) como descarga aparte, con `bun run record --kind eval`, solo si T045 dice que los términos lo permiten. No se publica sin la confirmación de Marcos.
+- [ ] T075 [clase] Preparar el conjunto del eval (la grabación larga y las etiquetas) como descarga aparte, con `bun run record --kind eval` y la atribución de T045. No se publica sin la confirmación de Marcos.
 - [ ] T076 [clase] Repasar `quickstart.md` de principio a fin y corregir lo que no cuadre.
 - [ ] T077 [bloque] Reconstruir la demo con `bun run demo:build` cuando ya haya briefs e informe de eval. Comprobar que ocupa 50 MB o menos y repetir T049.
-- [ ] T078 [bloque] Demo pública en la Pi, detrás de Cloudflare Tunnel (constitución, "Restricciones técnicas"). Mientras no se sepa si aisstream permite redistribuir (T045), en modo `replay` sobre `demo/vigia-demo.sqlite`; en modo `public`, con los datos en vivo, solo si lo permite. No se publica nada sin la confirmación de Marcos.
+- [ ] T078 [bloque] Demo pública en la Pi, detrás de Cloudflare Tunnel (constitución, "Restricciones técnicas"): en modo `public` (solo lectura) con los datos en vivo, o en `replay` sobre `demo/vigia-demo.sqlite`. No se publica nada sin la confirmación de Marcos.
 
 ---
 
@@ -507,4 +506,4 @@ Task: "Prueba de modelos"                 # T033
 - Si un cambio toca 3 archivos o más, pasa por `/code-review medium`.
 - Los secretos, solo en `.env`. Nunca en el repo ni en el código.
 - Solo buques: ninguna herramienta ni prompt busca personas (principio VI).
-- Los datos reales de aisstream no entran en el repo hasta T045.
+- Los datos de Digitraffic son CC BY 4.0: si entran en el repo o en la demo, van con su atribución.

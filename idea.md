@@ -1,5 +1,7 @@
 # Vigía (nombre provisional)
 
+> **Cambio de región (2026-10-19):** tras medir la cobertura, Vigía pasa del Estrecho de Gibraltar al golfo de Finlandia, con datos de Digitraffic. Ver `specs/001-vigia-v1/research.md`, R7. Lo de abajo es el encuadre original.
+
 - **Qué es:** un panel que sigue en vivo el tráfico AIS del Estrecho de Gibraltar, detecta barcos que dejan de emitir y pone a **un agente de IA a investigar cada caso** como lo haría un analista junior. El agente usa herramientas: rastro, cobertura, datos del barco, barcos cercanos y Global Fishing Watch. Deja un expediente con su veredicto, las pruebas y la traza de cada paso, y cada mañana redacta un brief.
 - **Para quién:** reclutadores y equipos técnicos de defensa e inteligencia (Indra, GMV, Navantia y similares). El repo tiene que demostrar en 5 minutos que sé **diseñar, construir y medir un agente**, no solo llamar a un LLM. De paso, la comunidad OSINT (r/OSINT y similares).
 - **Licencia y dinero:** MIT, gratis, solo datos abiertos. Global Fishing Watch solo permite uso no comercial, y el proyecto lo es.

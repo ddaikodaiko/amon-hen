@@ -1,5 +1,7 @@
 # Fase 1: investigación (2026-10-19)
 
+> **Cambio de región (2026-10-19):** tras medir la cobertura, Vigía pasa del Estrecho de Gibraltar al golfo de Finlandia, con datos de Digitraffic. Ver `specs/001-vigia-v1/research.md`, R7. Lo de abajo es el encuadre original.
+
 Tiempo: ~25 min. Usé `gh search`, la API de GitHub y Jina. Exa cortó a la tercera búsqueda por el límite gratuito.
 
 ## Las tres preguntas

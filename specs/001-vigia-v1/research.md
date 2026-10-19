@@ -71,22 +71,27 @@ Fecha: 2026-10-19. Cada punto sigue el formato Decisión / Por qué / Alternativ
   - H3 (`h3-js`): hexágonos más bonitos, pero una dependencia que una sola región no necesita.
   - Calcular los reportes esperados según la norma ITU-R M.1371: más preciso en teoría, pero frágil con transpondedores que no cumplen.
 
-## R7. Ingesta desde aisstream
+## R7. Ingesta desde Digitraffic (antes, aisstream)
 
 - **Decisión:**
-  - Un proceso `ingest` en la Pi con el cliente WebSocket de Bun.
-  - Manda la suscripción en menos de 3 s: `BoundingBoxes` con los pares `[lat, lon]` de la región y los tipos de mensaje `PositionReport`, `StandardClassBPositionReport`, `ExtendedClassBPositionReport`, `ShipStaticData` y `StaticDataReport`.
-  - Se reconecta con espera exponencial.
+  - Un proceso `ingest` en la Pi se conecta por WebSocket a `wss://meri.digitraffic.fi:443/mqtt` (subprotocolo `mqtt`) con un cliente MQTT 3.1.1 mínimo y propio: CONNECT, SUBSCRIBE, PUBLISH con QoS 0 y PINGREQ cada 30 s.
+  - Se suscribe a `vessels-v2/+/location` y `vessels-v2/+/metadata`. Llega toda la flota que ve Fintraffic (~40 mensajes/s): se archiva todo, y el filtro por región se aplica al procesar.
+  - Se reconecta con espera exponencial y fuerza la reconexión si pasan 2 min sin mensajes.
   - Registra la salud por minuto. Un periodo de 2 minutos o más sin mensajes es una caída propia (FR-002).
-- **Por qué:** la documentación de aisstream exige un backend (no admite conexiones desde el navegador), el bounding box y la suscripción rápida.
-- **Comprobado en T001 (2026-10-19):** el cliente WebSocket de Bun negocia `permessage-deflate`, y aisstream responde `CompressionEnabled: true`. No hace falta el paquete `ws`.
-- **Medido en T001 (2026-10-19, 17,7 min desde el portátil):**
-  - **8,9 posiciones por minuto y 52 barcos distintos** en todo el Estrecho;
-  - los barcos en marcha llegan, en mediana, cada 90 s (p10: 53 s; p90: 390 s), así que aisstream da como mucho ~1 mensaje por barco y minuto;
-  - casi todo viene de la orilla sur (Tánger Med y Ceuta), y de la bahía de Algeciras y Gibraltar no llega casi nada;
-  - en el mismo minuto, Rotterdam dio 206 mensajes por minuto.
-- **Alternativa medida el mismo día:** Digitraffic (Finlandia), con datos abiertos CC BY 4.0, sin key y en vivo por MQTT sobre WebSocket. En 3 min dio **1.285 mensajes por minuto y 415 barcos solo en el golfo de Finlandia**, con barcos en marcha cada 9 s de mediana.
-- **Conclusión:** con aisstream, el Estrecho no tiene cobertura suficiente para detectar barcos oscuros. Casi todo gap sería un hueco de cobertura. Hay que decidir región y fuente antes de T002.
+- **Formato** (visto el 2026-10-19): el MMSI va en el topic.
+  - `location`: `lat`, `lon`, `sog`, `cog`, `heading`, `navStat`, `rot`, `posAcc`, `raim` y `time` (Unix, en segundos).
+  - `metadata`: `name`, `callSign`, `imo`, `destination`, `draught`, `eta`, `type`, `posType`, `refA`-`refD` y `timestamp` (en ms).
+- **Clase A o B:** Digitraffic no la da. Regla de partida: es clase A si su metadata trae `imo`, `eta` o `draught`, que solo emite el mensaje 5 (clase A). Si no se sabe, clase B, con el umbral largo (60 min), que da menos falsos positivos **[verificar en T009]**.
+- **Por qué:** es la fuente gratuita con mejor cobertura medida (abajo), no pide key, y su licencia (CC BY 4.0) permite publicar la demo y el set del eval con atribución.
+- **Alternativa descartada: aisstream en el Estrecho de Gibraltar**, la región original. La grabadora de T001 se escribió primero contra aisstream (commit `806a157`) y sirvió para medirlo:
+  - **Comprobado:** el cliente WebSocket de Bun negocia `permessage-deflate`, y aisstream responde `CompressionEnabled: true`. No hace falta el paquete `ws`.
+  - **Medido (17,7 min desde el portátil):**
+    - **8,9 posiciones por minuto y 52 barcos distintos** en todo el Estrecho;
+    - los barcos en marcha llegan, en mediana, cada 90 s (p10: 53 s; p90: 390 s), así que aisstream da como mucho ~1 mensaje por barco y minuto;
+    - casi todo viene de la orilla sur (Tánger Med y Ceuta), y de la bahía de Algeciras y Gibraltar no llega casi nada;
+    - en el mismo minuto, Rotterdam dio 206 mensajes por minuto.
+  - **Digitraffic, medido el mismo día:** (Finlandia), con datos abiertos CC BY 4.0, sin key y en vivo por MQTT sobre WebSocket. En 3 min dio **1.285 mensajes por minuto y 415 barcos solo en el golfo de Finlandia**, con barcos en marcha cada 9 s de mediana.
+  - **Conclusión:** con aisstream, el Estrecho no tiene cobertura suficiente para detectar barcos oscuros: casi todo gap sería un hueco de cobertura. Marcos decidió cambiar al golfo de Finlandia (2026-10-19).
 
 ## R8. Detector y exclusiones
 
@@ -135,7 +140,7 @@ Fecha: 2026-10-19. Cada punto sigue el formato Decisión / Por qué / Alternativ
 
 ## R13. Modo público y seguridad
 
-- **Decisión:** con `VIGIA_MODE=public`, el **servidor** rechaza con 403 todo lo que escribe o gasta: etiquetas, reinvestigar, eval. No basta con ocultar los botones. En la demo (`replay`) solo se permite cambiar la velocidad del replay. Los secretos (`AISSTREAM_KEY`, `GFW_TOKEN`, `ANTHROPIC_API_KEY`) van solo en `.env`, fuera del repo.
+- **Decisión:** con `VIGIA_MODE=public`, el **servidor** rechaza con 403 todo lo que escribe o gasta: etiquetas, reinvestigar, eval. No basta con ocultar los botones. En la demo (`replay`) solo se permite cambiar la velocidad del replay. Los secretos (`GFW_TOKEN`, `ANTHROPIC_API_KEY`) van solo en `.env`, fuera del repo.
 - **Por qué:** FR-026 y principio V. Nadie de fuera puede gastar presupuesto.
 
 ## R14. Pruebas

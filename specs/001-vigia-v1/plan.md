@@ -1,11 +1,11 @@
-# Implementation Plan: Vigía v1, un agente que investiga barcos oscuros en el Estrecho de Gibraltar
+# Implementation Plan: Vigía v1, un agente que investiga barcos oscuros en el golfo de Finlandia
 
 **Branch**: `001-vigia-v1` | **Date**: 2026-10-19 | **Spec**: [spec.md](spec.md)
 **Input**: Feature specification from `specs/001-vigia-v1/spec.md`
 
 ## Summary
 
-La Pi 5 ingiere 24/7 el AIS del Estrecho desde aisstream y hace cuatro cosas:
+La Pi 5 ingiere 24/7 el AIS del golfo de Finlandia desde Digitraffic (MQTT sobre WebSocket, sin key) y hace cuatro cosas:
 - guarda las posiciones reducidas en SQLite y el crudo por horas;
 - registra la salud de su propia ingesta;
 - calcula la cobertura en "minutos-barco" sobre una rejilla de 0,025°;
@@ -25,7 +25,7 @@ El agente deja un expediente con su veredicto, las pruebas enlazadas a los pasos
 - `zod`: validar las entradas de las herramientas y el veredicto;
 - `@sveltejs/kit` + `adapter-static` y `maplibre-gl`: el panel.
 
-Opcional: `ws`, solo si el WebSocket de Bun no negocia `permessage-deflate` con aisstream (R7).
+Sin cliente MQTT de npm: el subconjunto que se usa (CONNECT, SUBSCRIBE, PUBLISH con QoS 0 y PINGREQ) cabe en un módulo propio con pruebas (R7).
 
 De desarrollo, que no llegan a producción:
 - `typescript` y `@types/bun`: Bun ejecuta TypeScript sin comprobar tipos, así que el modo `strict` solo se hace cumplir con `tsc --noEmit` (`bun run check`);
@@ -40,14 +40,14 @@ De desarrollo, que no llegan a producción:
 
 **Project Type**: una aplicación web en un solo paquete Bun (servidor, procesos y panel estático)
 **Performance Goals**:
-- Ingesta sostenida del tráfico del Estrecho en la Pi (el volumen se mide en T001; se estiman ~100 mensajes/s de pico).
+- Ingesta sostenida del flujo completo de Digitraffic en la Pi: ~40 mensajes/s medidos, ~21/s dentro del golfo.
 - Posiciones en el panel a 1 Hz.
 - Expediente en 10 minutos o menos con el modelo disponible (SC-005).
 
 **Constraints**: demo de 50 MB como mucho y sin red; 0 $ de API por defecto; prompts y salidas del agente en inglés; nada de datos de personas.
 **Scale/Scope**:
 - Una región y un solo usuario que etiqueta.
-- ~400 barcos a la vez (estimado).
+- ~400 barcos a la vez en el golfo (415 medidos en 3 min).
 - Decenas de candidatos al día (estimado; se mide en vivo).
 - Muestra del eval: entre 100 y 300 casos.
 
@@ -62,7 +62,7 @@ De desarrollo, que no llegan a producción:
 | III. Ninguna afirmación sin eval | Etiquetas humanas a ciegas en orden; GFW solo como herramienta; comparación con la regla de 60 min; Wilson; regla de parada | ✅ |
 | IV. Reproducible sin keys | `demo/vigia-demo.sqlite` + mapa base GeoJSON offline + modo `replay` que no llama a nada de fuera | ✅ |
 | V. Gratis por defecto, coste acotado | Perfil `local` por defecto; `VIGIA_BUDGET_USD=0`; los tokens se miden también en local; el escalado está desactivado por defecto | ✅ |
-| VI. Datos abiertos, buques y no personas | aisstream, GFW (no comercial) y OSM (ODbL con atribución); el prompt prohíbe buscar personas; aviso en el panel y en el README | ✅ |
+| VI. Datos abiertos, buques y no personas | Digitraffic (CC BY 4.0), GFW (no comercial) y OSM (ODbL), con atribución; el prompt prohíbe buscar personas; aviso en el panel y en el README | ✅ |
 
 No hay incumplimientos. La tabla de complejidad (abajo) solo recoge decisiones que conviene justificar.
 
@@ -90,7 +90,7 @@ src/
 ├── config.ts              # .env, perfiles de modelo y precios, región, umbrales
 ├── db/                    # schema.sql, migraciones, consultas tipadas
 ├── geo/                   # rejilla 0,025°, haversine, celdas, polígonos (puertos, borde)
-├── ingest/                # cliente aisstream, archivo crudo, parse, pipeline (reducción a 30 s), salud
+├── ingest/                # cliente MQTT de Digitraffic, archivo crudo, parse, pipeline (reducción a 30 s), salud
 │                          # e importación del archivo crudo
 ├── coverage/              # minutos-barco por celda y hora (ventana de 7 días)
 ├── detect/                # detector de gaps, exclusiones y disparo (reaparece o 6 h)

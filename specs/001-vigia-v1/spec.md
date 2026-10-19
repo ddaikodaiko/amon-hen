@@ -1,9 +1,9 @@
-# Feature Specification: Vigía v1, un agente que investiga barcos oscuros en el Estrecho de Gibraltar
+# Feature Specification: Vigía v1, un agente que investiga barcos oscuros en el golfo de Finlandia
 
 **Feature Branch**: `001-vigia-v1`
 **Created**: 2026-10-19
 **Status**: Draft
-**Input**: idea.md (alcance v1 tras el consejo), consejo.md e investigacion.md. Un panel que sigue el AIS del Estrecho, registra la salud de su propia ingesta, mide la cobertura, detecta gaps con reglas y pone a un agente de IA a investigar cada uno con herramientas, dejando un expediente con veredicto, pruebas y traza. Incluye etiquetado manual, un eval contra la regla ingenua, un brief diario y un modo replay sin keys.
+**Input**: idea.md (alcance v1 tras el consejo), consejo.md e investigacion.md. Un panel que sigue el AIS del golfo de Finlandia, registra la salud de su propia ingesta, mide la cobertura, detecta gaps con reglas y pone a un agente de IA a investigar cada uno con herramientas, dejando un expediente con veredicto, pruebas y traza. Incluye etiquetado manual, un eval contra la regla ingenua, un brief diario y un modo replay sin keys.
 
 ## Clarifications
 
@@ -13,7 +13,8 @@
 - Q: ¿En qué idioma van el panel, los expedientes y el brief? → A: En inglés, para llegar a r/OSINT, HN y a los reclutadores internacionales. La documentación interna (idea, spec, plan) sigue en español.
 - Q: ¿Qué zonas portuarias se excluyen? → A: Solo las dársenas y los amarres, donde los barcos están atracados. Los fondeaderos sí generan candidatos, porque ahí ocurren los trasbordos y el bunkering.
 - Q: ¿Qué umbral de silencio crea un candidato? → A: 30 min para la clase A en navegación y 60 min para la clase B. La regla ingenua de comparación sigue en 60 min para todos.
-- Q: ¿Qué grabación va en el repo? → A: 24 h del Estrecho, reducidas a una posición por barco y minuto, como mucho 50 MB. El conjunto del eval (la grabación larga y las etiquetas) se publica como descarga aparte, no dentro del repo.
+- Q: ¿Qué grabación va en el repo? → A: 24 h de la región, reducidas a una posición por barco y minuto, como mucho 50 MB. El conjunto del eval (la grabación larga y las etiquetas) se publica como descarga aparte, no dentro del repo.
+- Q: ¿Qué región y qué fuente de AIS? → A: El golfo de Finlandia, con Digitraffic (Fintraffic, CC BY 4.0, sin key). El Estrecho de Gibraltar se descartó tras medirlo: aisstream daba 8,9 posiciones por minuto y solo de la orilla sur (research R7). (Decidido el 2026-10-19.)
 - Q: ¿Qué significa "en navegación" para crear un candidato? → A: No se usa el estado de navegación que declara el barco, porque lo pone él mismo y se puede falsear. Es candidato cualquier gap que no empiece en una dársena o un amarre, esté el barco navegando o fondeado. (Decidido tras `/speckit-analyze`.)
 - Q: ¿Se etiquetan los candidatos descartados? → A: No. La población del eval son los candidatos no descartados, y el informe dice cuántos se descartaron y por qué. (Decidido tras `/speckit-analyze`.)
 
@@ -21,7 +22,7 @@
 
 ### User Story 1 - Investigar un gap y leer su expediente (Priority: P1)
 
-Un barco deja de emitir en el Estrecho y el sistema lo marca como candidato. El agente lo investiga:
+Un barco deja de emitir en el golfo de Finlandia y el sistema lo marca como candidato. El agente lo investiga:
 - mira el rastro antes y después;
 - comprueba la cobertura de esa zona a esa hora;
 - consulta los datos del barco, los barcos cercanos y los eventos de Global Fishing Watch.
@@ -45,7 +46,7 @@ Después deja un **expediente** con un veredicto (*hueco de cobertura*, *apagado
 ### User Story 2 - La demo en 5 minutos, sin keys (Priority: P2)
 
 Un reclutador o evaluador técnico clona el repo y ejecuta un solo comando. Se abre el panel en **modo replay**:
-- el tráfico del Estrecho, grabado, se reproduce en el mapa;
+- el tráfico del golfo, grabado, se reproduce en el mapa;
 - la lista de casos y los expedientes ya están calculados, con sus trazas;
 - también están el brief del día grabado y la página del eval.
 
@@ -83,7 +84,7 @@ Marcos etiqueta a mano los candidatos, **sin ver antes el veredicto del agente**
 
 ### User Story 4 - Vigilancia en vivo (Priority: P4)
 
-Con una key de AIS, el sistema ingiere en vivo el tráfico del Estrecho:
+Con conexión a internet (la fuente no pide key), el sistema ingiere en vivo el tráfico del golfo:
 - registra la salud de su propia conexión;
 - actualiza el mapa de cobertura;
 - crea candidatos cuando un barco deja de emitir;
@@ -97,7 +98,7 @@ El mismo modo en vivo graba los datos para poder reproducirlos después.
 
 **Acceptance Scenarios**:
 
-1. **Given** una key válida y conexión, **When** arranca el modo en vivo, **Then** los barcos del Estrecho aparecen en el mapa y se actualizan.
+1. **Given** conexión con la fuente de AIS, **When** arranca el modo en vivo, **Then** los barcos del golfo aparecen en el mapa y se actualizan.
 2. **Given** que la propia ingesta pasa 10 minutos sin recibir mensajes, **When** se reanuda, **Then** la caída queda en el panel de salud y ningún gap que se solape con ella crea candidato.
 3. **Given** un barco que navega en zona de buena cobertura y deja de emitir más tiempo del umbral, **When** se cumple la condición de disparo, **Then** se crea el candidato y el agente lo investiga sin intervención.
 4. **Given** el modo en vivo en marcha, **When** se pide guardar una ventana de tiempo, **Then** queda grabada y se puede reproducir en modo replay.
@@ -128,9 +129,10 @@ Los briefs anteriores se consultan en el panel.
 
 - **Se cae la propia ingesta:** todos los barcos "se apagan" a la vez. Los gaps que se solapan con una caída propia no crean candidato.
 - **Un barco sale de la región:** si su última posición está junto al borde y su rumbo apunta hacia fuera, no es candidato.
-- **Barcos atracados** (dársenas y amarres de Algeciras, Gibraltar, Tánger Med y Ceuta): emiten con menos frecuencia y el terreno tapa la señal, así que los gaps que empiezan ahí no crean candidato. **Los fondeaderos sí crean candidato**, porque ahí ocurren los trasbordos y el bunkering.
+- **Barcos atracados** (dársenas y amarres de los puertos de la región: Helsinki, Porvoo-Sköldvik, Kotka-Hamina, Tallinn-Muuga, Ust-Luga, Primorsk y San Petersburgo, entre otros): emiten con menos frecuencia y el terreno tapa la señal, así que los gaps que empiezan ahí no crean candidato. **Los fondeaderos sí crean candidato**, porque ahí ocurren los trasbordos y el bunkering.
 - **Transpondedores de clase B:** informan con menos frecuencia que los de clase A y tienen un umbral propio.
 - **El mismo MMSI en dos sitios a la vez** (duplicado o suplantación): se registra en la traza y el veredicto no puede ser *hueco de cobertura* sin más pruebas.
+- **Interferencia GNSS:** en el Báltico es frecuente que muchos barcos de una zona salten de posición a la vez. Si los vecinos también saltan, es interferencia, no un barco suplantado, y la traza lo registra.
 - **El gap sigue abierto:** el agente investiga cuando el barco reaparece o cuando el gap cumple 6 horas. Si reaparece después, la reaparición se añade al expediente y se reinvestiga, guardando las dos versiones.
 - **Global Fishing Watch no responde o limita las peticiones:** el agente sigue sin esa herramienta y la traza registra el fallo.
 - **El modelo falla o devuelve un expediente con formato no válido:** se reintenta un número limitado de veces. Si sigue fallando, el caso queda en estado *error*, visible y reintentable.
@@ -144,7 +146,7 @@ Los briefs anteriores se consultan en el panel.
 
 **Ingesta, salud y cobertura**
 
-- **FR-001**: El sistema MUST ingerir en vivo los mensajes AIS de posición y estáticos de la región del Estrecho.
+- **FR-001**: El sistema MUST ingerir en vivo los mensajes AIS de posición y estáticos de la región del golfo de Finlandia.
 - **FR-002**: El sistema MUST registrar de forma continua la salud de su ingesta: estado de la conexión y mensajes por minuto. Cualquier periodo de 2 minutos o más sin mensajes MUST marcarse como caída propia.
 - **FR-003**: El sistema MUST guardar los mensajes recibidos, para poder reproducir cualquier ventana de tiempo en modo replay.
 - **FR-004**: El sistema MUST calcular un mapa de cobertura por celda y por hora del día: la proporción de los reportes que se esperaban de los barcos que pasan por esa celda y que realmente se recibieron.
@@ -244,7 +246,7 @@ Los briefs anteriores se consultan en el panel.
 
 ## Assumptions
 
-- **Región:** el Estrecho de Gibraltar, aproximadamente entre 35,70° N y 36,30° N y entre 6,20° W y 5,00° W. Incluye la bahía de Algeciras, Tánger Med y Ceuta. Se excluyen las dársenas y los amarres de Algeciras, Gibraltar, Tánger Med y Ceuta; sus fondeaderos no.
+- **Región:** el golfo de Finlandia, aproximadamente entre 59,20° N y 60,80° N y entre 22,50° E y 30,40° E: de Hanko y Paldiski a San Petersburgo. Se excluyen las dársenas y los amarres de sus puertos; sus fondeaderos no. La cobertura del extremo ruso (Primorsk, Ust-Luga) depende de las antenas finlandesas y se ve en la capa de cobertura.
 - **Umbrales:**
   - Es candidato un barco de clase A que pasa 30 minutos o más sin emitir, navegando o fondeado. Para la clase B, 60 minutos. Solo se excluyen los gaps que empiezan en una dársena o un amarre (además de las caídas propias y las salidas de la región).
   - La regla ingenua de comparación usa 60 minutos.
@@ -254,10 +256,9 @@ Los briefs anteriores se consultan en el panel.
   - El PC solo está encendido a ratos y se alcanza por Tailscale. La ingesta y el panel corren 24/7 en la Pi 5.
   - La API de pago (Haiku y Sonnet) es opcional y se usa para comparar en el eval. El tope por defecto es 0 $ y se puede configurar.
 - **Etiquetado:** etiqueta un solo usuario, Marcos, en local y sin autenticación. El despliegue público es de solo lectura.
-- **Grabación de la demo:** 24 horas del Estrecho dentro del repo, reducidas a una posición por barco y minuto (50 MB como mucho), conservando los gaps y su contexto. El conjunto del eval (la grabación larga y las etiquetas) se publica como descarga aparte. Antes de publicar cualquier grabación hay que comprobar que los términos de aisstream lo permiten.
+- **Grabación de la demo:** 24 horas de la región dentro del repo, reducidas a una posición por barco y minuto (50 MB como mucho), conservando los gaps y su contexto. El conjunto del eval (la grabación larga y las etiquetas) se publica como descarga aparte. Los datos de Digitraffic son CC BY 4.0: se pueden publicar con su atribución.
 - **Fuentes:**
-  - aisstream.io con key gratuita.
+  - Digitraffic (Fintraffic): AIS en vivo por MQTT, sin key, con licencia CC BY 4.0 y atribución.
   - Global Fishing Watch con token gratuito y solo uso no comercial.
-  - Hasta comprobar que los términos de aisstream lo permiten, la demo pública es solo replay.
-- **Zona horaria:** Europe/Madrid. La hora del brief por defecto son las 08:00.
+- **Zona horaria:** Europe/Madrid, que es la de Marcos (la región va una hora por delante). La hora del brief por defecto son las 08:00.
 - **Fuera de alcance en v1:** la capa satélite, las noticias (GDELT y RSS), el loitering, las concentraciones, más regiones, varios usuarios y las alertas por correo o mensajería.

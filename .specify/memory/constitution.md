@@ -1,6 +1,10 @@
 <!--
 Informe de sincronización
-- Versión: 1.0.0 → 1.1.0 (MINOR: el principio V amplía su guía)
+- Versión: 1.1.0 → 1.2.0 (MINOR: cambian la región y la fuente de datos)
+- Restricciones técnicas: región Estrecho de Gibraltar → golfo de Finlandia; ingesta aisstream →
+  Digitraffic (MQTT, CC BY 4.0). Motivo: la cobertura medida (specs/001-vigia-v1/research.md, R7).
+- Principios IV y VI: nombran la nueva fuente. Plantillas sin cambios.
+- 1.1.0: 1.0.0 → 1.1.0 (MINOR: el principio V amplía su guía)
 - Principio renombrado: V "Coste acotado" → "Gratis por defecto, coste acotado". El modelo es
   intercambiable, el local va por defecto en la RTX 3060 Ti y el tope por defecto es 0 €.
 - Restricciones técnicas: el modelo va en el PC de casa (a ratos) y los candidatos esperan en cola
@@ -40,9 +44,9 @@ Informe de sincronización
 
 ### IV. Reproducible sin keys
 - `bun run demo` MUST levantar el panel en modo replay, con datos grabados y expedientes ya calculados, sin ninguna API key ni red externa.
-- Los servicios externos (aisstream, GFW, la API de Claude) solo se usan en el modo en vivo.
+- Los servicios externos (Digitraffic, GFW, la API de Claude) solo se usan en el modo en vivo.
 
-**Por qué:** quien evalúa el repo no va a sacar tres keys. Además, la demo no puede caerse si aisstream falla.
+**Por qué:** quien evalúa el repo no va a sacar keys. Además, la demo no puede caerse si la fuente de AIS falla.
 
 ### V. Gratis por defecto, coste acotado
 - El agente MUST funcionar con cualquier modelo compatible con la API de mensajes de Anthropic: cambiar de modelo es cambiar la URL y el nombre, no el código.
@@ -53,7 +57,7 @@ Informe de sincronización
 **Por qué:** probar no puede costar dinero. Además, comparar el modelo local con los de pago en precisión y coste es en sí un resultado que enseñar.
 
 ### VI. Datos abiertos, buques y no personas
-- Solo fuentes abiertas, y siempre dentro de sus términos de uso. Global Fishing Watch es solo para uso no comercial.
+- Solo fuentes abiertas, y siempre dentro de sus términos de uso. Global Fishing Watch es solo para uso no comercial. Digitraffic (CC BY 4.0) se cita en el panel y en el README.
 - Se analizan señales de buques, nunca personas.
 - El README MUST llevar un aviso de proyecto educativo, sin garantías.
 
@@ -61,9 +65,9 @@ Informe de sincronización
 
 ## Restricciones técnicas
 
-- **Región única:** el Estrecho de Gibraltar. Más regiones es v2.
+- **Región única:** el golfo de Finlandia. El Estrecho de Gibraltar se descartó por falta de cobertura gratuita (research R7). Más regiones es v2.
 - **Detección:** reglas deterministas generan los candidatos; el agente investiga, no detecta.
-- **Ingesta:** aisstream solo desde el backend, porque no admite conexiones desde el navegador. La salud de la ingesta MUST registrarse, y los gaps que coinciden con caídas propias se descartan.
+- **Ingesta:** Digitraffic por MQTT, siempre desde el backend, que es quien archiva los datos y mide la salud. La salud de la ingesta MUST registrarse, y los gaps que coinciden con caídas propias se descartan.
 - **Despliegue:** la ingesta, el panel y la demo pública van en la Pi 5 (24/7, con Cloudflare Tunnel). El modelo va en el PC de casa, que solo está encendido a ratos y se alcanza por Tailscale. Mientras está apagado, los candidatos esperan en cola sin perderse.
 - **Secretos:** solo en variables de entorno (`.env` fuera del repo), nunca en el código.
 
@@ -82,4 +86,4 @@ Informe de sincronización
   - MINOR si se añade uno;
   - PATCH si solo cambia la redacción.
 
-**Versión**: 1.1.0 | **Ratificada**: 2026-10-19 | **Última modificación**: 2026-10-19
+**Versión**: 1.2.0 | **Ratificada**: 2026-10-19 | **Última modificación**: 2026-10-19

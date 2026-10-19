@@ -3,7 +3,7 @@
 | Comando | Qué hace | Necesita |
 |---|---|---|
 | `bun run demo` | Compila el panel si hace falta y levanta el servidor en modo `replay` sobre `demo/vigia-demo.sqlite`. Abre `http://localhost:4250` | Nada: ni keys ni red (FR-024) |
-| `bun run ingest` | Proceso 24/7: aisstream → SQLite + archivo crudo por horas + salud | `AISSTREAM_KEY` |
+| `bun run ingest` | Proceso 24/7: Digitraffic (MQTT) → SQLite + archivo crudo por horas + salud | Internet; no pide key |
 | `bun run ingest --from-archive <dir> [--from <ISO> --to <ISO>]` | Importa el archivo crudo a SQLite por el mismo camino que la ingesta en vivo. Sirve para trabajar sin la Pi | El archivo crudo |
 | `bun run server` | Panel, API, SSE, detector, cobertura y la cola del agente (modo `live`, o `public` con `VIGIA_MODE`) | La base de la ingesta. Para investigar: un perfil de modelo alcanzable |
 | `bun run investigate [--ids 1,2] [--all-pending] --profile local\|haiku\|sonnet` | Investiga esos candidatos, o todos los pendientes, con ese perfil (respetando el tope). Para desarrollar y para la prueba de modelos | La base; el perfil |
@@ -18,7 +18,6 @@
 
 | Variable | Para qué | Por defecto |
 |---|---|---|
-| `AISSTREAM_KEY` | Ingesta | — |
 | `GFW_TOKEN` | Herramienta de Global Fishing Watch | — |
 | `ANTHROPIC_API_KEY` | Solo para los perfiles de pago | — |
 | `VIGIA_LOCAL_URL` | Ollama | `http://pc-casa:11434` |

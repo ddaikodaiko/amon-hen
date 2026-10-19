@@ -31,5 +31,5 @@
 
 ## Notes
 
-- aisstream.io y Global Fishing Watch aparecen con su nombre porque son **dependencias de datos** (Assumptions), no decisiones de implementación. No se nombran lenguaje, base de datos, framework ni modelo.
+- Digitraffic y Global Fishing Watch aparecen con su nombre porque son **dependencias de datos** (Assumptions), no decisiones de implementación. No se nombran lenguaje, base de datos, framework ni modelo.
 - Los valores por defecto que debe confirmar Marcos están en Assumptions y no se marcaron como NEEDS CLARIFICATION, porque tienen un valor razonable: el tope de 10 €/mes, los umbrales de 30 y 60 min y la grabación de 24 h. `/speckit-clarify` es el sitio para revisarlos.
