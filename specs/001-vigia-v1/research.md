@@ -62,9 +62,11 @@ Fecha: 2026-10-19. Cada punto sigue el formato Decisión / Por qué / Alternativ
 
 - **Decisión:** rejilla regular de 0,025° (~2,5 km), que da ~1.200 celdas en la región. Para cada celda y hora del día:
   - Se interpola el rastro de cada barco a 1 minuto entre sus posiciones recibidas, incluidos los minutos de los gaps.
+  - **Solo cuentan los minutos en los que el barco va a más de 3 nudos**, según su SOG o, dentro de un gap, según la velocidad implícita entre los dos extremos. A esa velocidad, la clase A emite cada 10 s o menos y la clase B cada 30 s, así que cada minuto debería tener al menos un mensaje. Un barco fondeado emite cada 3 min: si contara, la cobertura saldría baja justo en los fondeaderos.
   - **cobertura = minutos-barco con al menos un mensaje / minutos-barco estimados en la celda**.
   - Se calcula sobre una ventana móvil de 7 días y se guarda el tamaño de la muestra.
-- **Por qué:** no necesita dependencias, se explica en una frase, se puede comprobar a mano y no exige conocer el intervalo de reporte de cada clase AIS.
+  - `get_coverage` resta la contribución del barco investigado (se recalcula al vuelo solo para él), para que su propio gap no cuente como prueba de mala cobertura.
+- **Por qué:** no necesita dependencias, se explica en una frase y se puede comprobar a mano. Con el filtro de velocidad tampoco hace falta modelar el intervalo de reporte de cada clase AIS.
 - **Alternativas:**
   - H3 (`h3-js`): hexágonos más bonitos, pero una dependencia que una sola región no necesita.
   - Calcular los reportes esperados según la norma ITU-R M.1371: más preciso en teoría, pero frágil con transpondedores que no cumplen.
@@ -81,7 +83,7 @@ Fecha: 2026-10-19. Cada punto sigue el formato Decisión / Por qué / Alternativ
 
 ## R8. Detector y exclusiones
 
-- **Decisión:** el detector es determinista y no usa LLM. Crea un candidato si un barco en navegación pasa sin emitir 30 min o más (clase A) o 60 min o más (clase B). Se descarta, con su motivo, si:
+- **Decisión:** el detector es determinista y no usa LLM. Crea un candidato si un barco pasa sin emitir 30 min o más (clase A) o 60 min o más (clase B), navegando o fondeado. No usa el `nav_status`, porque lo declara el propio barco y se puede falsear. Se descarta, con su motivo, si:
   - el gap se solapa con una caída propia;
   - el barco está junto al borde de la región con rumbo hacia fuera;
   - el gap empieza en una dársena o un amarre (polígonos en `data/ports.geojson`; los fondeaderos no se excluyen).
@@ -120,6 +122,7 @@ Fecha: 2026-10-19. Cada punto sigue el formato Decisión / Por qué / Alternativ
   - Los intervalos de confianza del 95 % son de **Wilson**, implementados a mano.
   - `bun run eval --profile <local|haiku|sonnet>` reinvestiga los casos etiquetados con ese perfil, respetando el tope, y guarda el informe con `agent_version`, que es un hash del prompt, las herramientas y el perfil.
   - Las etiquetas *indeterminable* se excluyen de la precisión y la exhaustividad, y se informa de cuántas son.
+  - La población son los candidatos no descartados. El informe dice cuántos se descartaron, por motivo.
   - Se aplica la regla de parada de FR-021.
 - **Por qué:** Wilson se comporta bien con muestras pequeñas y proporciones extremas, y se explica en una línea.
 

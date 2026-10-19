@@ -26,6 +26,11 @@ El agente deja un expediente con su veredicto, las pruebas enlazadas a los pasos
 - `@sveltejs/kit` + `adapter-static` y `maplibre-gl`: el panel.
 
 Opcional: `ws`, solo si el WebSocket de Bun no negocia `permessage-deflate` con aisstream (R7).
+
+De desarrollo, que no llegan a producción:
+- `typescript` y `@types/bun`: Bun ejecuta TypeScript sin comprobar tipos, así que el modo `strict` solo se hace cumplir con `tsc --noEmit` (`bun run check`);
+- `mapshaper`: se ejecuta una vez con `bunx` para generar `data/land.geojson` (T039) y no se instala;
+- SvelteKit trae `svelte` y `vite` como dependencias de desarrollo del panel.
 **Storage**: SQLite (`bun:sqlite`, WAL) y el archivo crudo NDJSON con gzip por horas (R5)
 **Testing**: `bun test` con un modelo de pega con guion; sin red ni keys (R14)
 **Target Platform**:
@@ -52,7 +57,7 @@ Opcional: `ws`, solo si el WebSocket de Bun no negocia `permessage-deflate` con 
 
 | Principio | Cómo lo cumple el diseño | ¿Pasa? |
 |---|---|---|
-| I. Bun + TS estricto, dependencias mínimas | 4 dependencias, cada una justificada en research.md; SQLite viene con Bun; se descartan H3, DuckDB, PostGIS y PMTiles | ✅ |
+| I. Bun + TS estricto, dependencias mínimas | 4 dependencias de ejecución, cada una justificada en research.md, y 2 de desarrollo, justificadas arriba; SQLite viene con Bun; se descartan H3, DuckDB, PostGIS y PMTiles | ✅ |
 | II. Traza | `trace_steps` guarda cada paso con tokens, coste y duración; `evidence.step_idx` se valida contra la traza; el panel muestra `output_summary` en tono de analista | ✅ |
 | III. Ninguna afirmación sin eval | Etiquetas humanas a ciegas en orden; GFW solo como herramienta; comparación con la regla de 60 min; Wilson; regla de parada | ✅ |
 | IV. Reproducible sin keys | `demo/vigia-demo.sqlite` + mapa base GeoJSON offline + modo `replay` que no llama a nada de fuera | ✅ |
@@ -85,7 +90,8 @@ src/
 ├── config.ts              # .env, perfiles de modelo y precios, región, umbrales
 ├── db/                    # schema.sql, migraciones, consultas tipadas
 ├── geo/                   # rejilla 0,025°, haversine, celdas, polígonos (puertos, borde)
-├── ingest/                # cliente aisstream, salud, archivo crudo, reducción a 30 s
+├── ingest/                # cliente aisstream, archivo crudo, parse, pipeline (reducción a 30 s), salud
+│                          # e importación del archivo crudo
 ├── coverage/              # minutos-barco por celda y hora (ventana de 7 días)
 ├── detect/                # detector de gaps, exclusiones y disparo (reaparece o 6 h)
 ├── agent/
@@ -99,8 +105,8 @@ src/
 ├── eval/                  # métricas, Wilson, regla de parada, informe
 ├── brief/                 # parte determinista y narrativa opcional
 ├── replay/                # reloj del replay y exportación de grabaciones
-├── server/                # Bun.serve: API, SSE, estáticos y guardas de modo
-└── cli/                   # ingest.ts, server.ts, eval.ts, brief.ts, record.ts, demo.ts, demo-build.ts
+├── server/                # Bun.serve: API (routes/), SSE, trabajos del modo live, estáticos y guardas de modo
+└── cli/                   # ingest.ts, server.ts, investigate.ts, eval.ts, brief.ts, record.ts, demo.ts, demo-build.ts
 panel/                     # SvelteKit (adapter-static) + MapLibre
 └── src/routes/            # / (mapa), /cases, /cases/[id], /label, /eval, /briefs, /health
 data/                      # land.geojson (OSM recortado), ports.geojson (dársenas), region.json

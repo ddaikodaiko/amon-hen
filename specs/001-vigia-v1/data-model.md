@@ -37,7 +37,7 @@ Todo se guarda en una base SQLite (`bun:sqlite`, modo WAL). Las horas son UTC en
 |---|---|---|
 | cell_id | INTEGER | `row * ncols + col` de la rejilla de 0,025° |
 | hour_utc | INTEGER | 0-23 |
-| expected_min | INTEGER | minutos-barco estimados (por interpolación) |
+| expected_min | INTEGER | minutos-barco estimados (por interpolación, solo a más de 3 nudos; R6) |
 | received_min | INTEGER | minutos-barco con al menos un mensaje |
 | window_start, window_end | INTEGER | ventana móvil de 7 días |
 

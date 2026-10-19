@@ -11,8 +11,8 @@ Es el contrato más importante del proyecto. El modelo solo ve estas herramienta
 
 | Herramienta | Entrada | Salida (resumen) | Fuente |
 |---|---|---|---|
-| `get_track` | `mmsi`, `from`, `to` (ISO 8601, ventana de 6 h como mucho) | Hasta 120 puntos `{t, lat, lon, sog, cog, nav_status}` + un resumen: velocidad media, rumbo dominante y distancia recorrida | `positions` |
-| `get_coverage` | `lat`, `lon`, `hour_utc` | `{cell_id, ratio, expected_min, sample_ok, neighbors_avg_ratio}` | `coverage` |
+| `get_track` | `mmsi`, `from`, `to` (ISO 8601, ventana de 6 h como mucho) | Hasta 120 puntos `{t, lat, lon, sog, cog, nav_status}` + un resumen: velocidad media, rumbo dominante y distancia recorrida + `identity_conflicts`: posiciones seguidas que implican más de 50 nudos (posible MMSI duplicado o suplantado) | `positions` |
+| `get_coverage` | `lat`, `lon`, `hour_utc` | `{cell_id, ratio, expected_min, sample_ok, neighbors_avg_ratio}`, sin la contribución del barco investigado (R6) | `coverage` |
 | `get_vessel` | `mmsi` | `{name, type_label, flag, class, length_m, destination, last_static_at}` o `unknown` | `vessels` |
 | `get_nearby` | `lat`, `lon`, `at` (ISO), `radius_nm` (1-20, por defecto 10), `window_min` (por defecto 30) | `{vessels: [{mmsi, name, distance_nm, kept_reporting: boolean}], silent_count, reporting_count}` | `positions` |
 | `get_ingest_health` | `from`, `to` | `{outages: [{start, end}], min_msg_per_min}` | `ingest_minutes` y `outages` |
@@ -47,4 +47,5 @@ Si el perfil por defecto da `inconclusive` y hay un perfil superior configurado 
 - Eres un analista de inteligencia marítima. Investigas **un** gap de AIS en el Estrecho de Gibraltar.
 - Tu hipótesis de partida es que la mayoría de los gaps son huecos de cobertura. Para concluir *likely_dark* necesitas pruebas de que la cobertura era buena **y** de que los vecinos siguieron emitiendo.
 - Antes de concluir, cita los pasos de la traza.
+- Si `get_track` devuelve `identity_conflicts`, no concluyas *coverage_gap* sin otra prueba que lo apoye.
 - Solo analizas buques. Nunca busques personas, tripulación ni propietarios.

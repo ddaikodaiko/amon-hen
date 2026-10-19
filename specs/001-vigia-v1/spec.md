@@ -14,6 +14,8 @@
 - Q: ¿Qué zonas portuarias se excluyen? → A: Solo las dársenas y los amarres, donde los barcos están atracados. Los fondeaderos sí generan candidatos, porque ahí ocurren los trasbordos y el bunkering.
 - Q: ¿Qué umbral de silencio crea un candidato? → A: 30 min para la clase A en navegación y 60 min para la clase B. La regla ingenua de comparación sigue en 60 min para todos.
 - Q: ¿Qué grabación va en el repo? → A: 24 h del Estrecho, reducidas a una posición por barco y minuto, como mucho 50 MB. El conjunto del eval (la grabación larga y las etiquetas) se publica como descarga aparte, no dentro del repo.
+- Q: ¿Qué significa "en navegación" para crear un candidato? → A: No se usa el estado de navegación que declara el barco, porque lo pone él mismo y se puede falsear. Es candidato cualquier gap que no empiece en una dársena o un amarre, esté el barco navegando o fondeado. (Decidido tras `/speckit-analyze`.)
+- Q: ¿Se etiquetan los candidatos descartados? → A: No. La población del eval son los candidatos no descartados, y el informe dice cuántos se descartaron y por qué. (Decidido tras `/speckit-analyze`.)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -149,7 +151,7 @@ Los briefs anteriores se consultan en el panel.
 
 **Detección**
 
-- **FR-005**: El sistema MUST crear un candidato cuando un barco en navegación supera un tiempo sin emitir. El umbral depende de la clase de transpondedor (ver Assumptions).
+- **FR-005**: El sistema MUST crear un candidato cuando un barco supera un tiempo sin emitir, esté navegando o fondeado. El umbral depende de la clase de transpondedor (ver Assumptions). El estado de navegación que declara el barco no se usa para decidirlo.
 - **FR-006**: El sistema MUST descartar como candidatos los gaps que se solapan con caídas propias, las salidas de la región y los gaps que empiezan en una dársena o zona de amarre (los fondeaderos no se excluyen). Cada descarte MUST quedar registrado con su motivo.
 
 **Agente investigador**
@@ -167,7 +169,7 @@ Los briefs anteriores se consultan en el panel.
   - una explicación breve en lenguaje de analista.
 - **FR-009**: Cada expediente MUST guardar la traza completa. Por cada paso: la herramienta, su entrada, un resumen de su salida, el modelo usado, los tokens, el coste y la duración.
 - **FR-010**: El sistema MUST investigar con el modelo por defecto (local y gratuito). Si hay un modelo superior configurado y queda presupuesto, MUST reinvestigar con él una sola vez los casos *no concluyente*.
-- **FR-011**: El sistema MUST medir y guardar los tokens y el coste de cada caso, y tener un tope mensual de gasto de pago configurable (0 € por defecto). Al alcanzarlo, MUST dejar de llamar a modelos de pago y marcar los casos que lo necesiten como *pendiente por tope*.
+- **FR-011**: El sistema MUST medir y guardar los tokens y el coste de cada caso, y tener un tope mensual de gasto de pago configurable (0 $ por defecto). Al alcanzarlo, MUST dejar de llamar a modelos de pago y marcar los casos que lo necesiten como *pendiente por tope*.
 - **FR-028**: Si el modelo no está disponible (el PC apagado o sin conexión), los candidatos MUST quedar en cola como *pendiente sin modelo*. Cuando el modelo vuelva, MUST investigarse por orden de llegada sin perder ninguno.
 - **FR-029**: El mismo agente MUST poder ejecutarse contra distintos modelos cambiando solo la configuración, para comparar en el eval el modelo local con los de pago.
 - **FR-012**: Si una herramienta falla, el agente MUST continuar sin ella y registrar el fallo en la traza.
@@ -182,7 +184,7 @@ Los briefs anteriores se consultan en el panel.
 
 **Etiquetado y eval**
 
-- **FR-018**: Marcos MUST poder etiquetar, en orden cronológico y sin elegir cuáles, cada candidato como *hueco de cobertura*, *apagado probable* o *indeterminable*, con una nota opcional. El veredicto del agente MUST permanecer oculto hasta que se guarde la etiqueta.
+- **FR-018**: Marcos MUST poder etiquetar, en orden cronológico y sin elegir cuáles, cada candidato no descartado como *hueco de cobertura*, *apagado probable* o *indeterminable*, con una nota opcional. El veredicto del agente MUST permanecer oculto hasta que se guarde la etiqueta.
 - **FR-019**: Las etiquetas del eval MUST ser humanas. Ninguna etiqueta MUST derivarse de las fuentes que usa el agente.
 - **FR-020**: Un comando de eval MUST calcular, sobre los casos etiquetados, la precisión y la exhaustividad (cada una con su intervalo de confianza del 95 %) y la matriz de confusión del agente y de la regla ingenua (todo gap de más de 60 min es *apagado probable*). También el coste medio por caso y por modelo. El informe MUST guardarse con la fecha y la versión del agente.
 - **FR-021**: Regla de parada de la muestra: se etiqueta hasta tener 100 casos o más **y** al menos 15 *apagado probable*, o hasta llegar a 300 casos. Mientras no se cumpla, el informe MUST marcarse como *muestra insuficiente*. Si se llega a 300 sin 15 positivos, el informe MUST publicarse indicando que los positivos son raros.
@@ -234,7 +236,7 @@ Los briefs anteriores se consultan en el panel.
 - **SC-001**: Alguien que no conoce el proyecto pasa de clonar el repo a leer su primer expediente en 5 minutos o menos, sin credenciales ni red.
 - **SC-002**: El 100 % de los expedientes tienen veredicto, confianza, al menos una prueba enlazada a un paso de la traza y la traza completa.
 - **SC-003**: Se publica un informe de eval sobre una muestra etiquetada a mano que cumple la regla de parada (FR-021), con la precisión y la exhaustividad del agente y de la regla ingenua y sus intervalos de confianza. Al repetirlo sobre los mismos datos, las cifras de la regla salen idénticas.
-- **SC-004**: Con el modelo por defecto, el gasto en API es de 0 €. Con un modelo de pago activado, el coste medio por caso es de 1 céntimo de euro o menos, y el gasto de un mes nunca supera el tope.
+- **SC-004**: Con el modelo por defecto, el gasto en API es de 0 $. Con un modelo de pago activado, el coste medio por caso es de 0,01 $ o menos, y el gasto de un mes nunca supera el tope.
 - **SC-005**: Con el modelo disponible, el 95 % de los candidatos tiene su expediente en los 10 minutos siguientes a que se dispare la investigación. Tras 12 horas con el PC apagado, al encenderlo se investigan todos los candidatos en cola sin perder ninguno.
 - **SC-006**: En una prueba con una caída forzada de 10 minutos, no se crea ningún candidato a partir de gaps que se solapen con ella.
 - **SC-007**: En una semana de funcionamiento en vivo, hay brief los 7 días, a los 15 minutos de la hora configurada como mucho.
@@ -244,13 +246,13 @@ Los briefs anteriores se consultan en el panel.
 
 - **Región:** el Estrecho de Gibraltar, aproximadamente entre 35,70° N y 36,30° N y entre 6,20° W y 5,00° W. Incluye la bahía de Algeciras, Tánger Med y Ceuta. Se excluyen las dársenas y los amarres de Algeciras, Gibraltar, Tánger Med y Ceuta; sus fondeaderos no.
 - **Umbrales:**
-  - Es candidato un barco de clase A en navegación que pasa 30 minutos o más sin emitir. Para la clase B, 60 minutos.
+  - Es candidato un barco de clase A que pasa 30 minutos o más sin emitir, navegando o fondeado. Para la clase B, 60 minutos. Solo se excluyen los gaps que empiezan en una dársena o un amarre (además de las caídas propias y las salidas de la región).
   - La regla ingenua de comparación usa 60 minutos.
   - La investigación se dispara cuando el barco reaparece o cuando el gap cumple 6 horas.
 - **Modelo y presupuesto:**
   - El modelo por defecto es local, con Ollama en el PC de casa (RTX 3060 Ti, 8 GB de VRAM): un modelo de 7-9B con llamadas a herramientas, que cabe entero en la GPU.
   - El PC solo está encendido a ratos y se alcanza por Tailscale. La ingesta y el panel corren 24/7 en la Pi 5.
-  - La API de pago (Haiku y Sonnet) es opcional y se usa para comparar en el eval. El tope por defecto es 0 € y se puede configurar.
+  - La API de pago (Haiku y Sonnet) es opcional y se usa para comparar en el eval. El tope por defecto es 0 $ y se puede configurar.
 - **Etiquetado:** etiqueta un solo usuario, Marcos, en local y sin autenticación. El despliegue público es de solo lectura.
 - **Grabación de la demo:** 24 horas del Estrecho dentro del repo, reducidas a una posición por barco y minuto (50 MB como mucho), conservando los gaps y su contexto. El conjunto del eval (la grabación larga y las etiquetas) se publica como descarga aparte. Antes de publicar cualquier grabación hay que comprobar que los términos de aisstream lo permiten.
 - **Fuentes:**
