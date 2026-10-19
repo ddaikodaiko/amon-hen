@@ -1,0 +1,8 @@
+{
+  "name": "Gulf of Finland",
+  "lat_min": 59.2,
+  "lat_max": 60.8,
+  "lon_min": 22.5,
+  "lon_max": 30.4,
+  "border_margin_nm": 2
+}

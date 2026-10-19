@@ -1,0 +1,29 @@
+{
+  "valid": {
+    "position": {
+      "topic": "vessels-v2/230713000/location",
+      "data": { "time": 1792430100, "sog": 12.3, "cog": 254.1, "navStat": 0, "rot": 0, "posAcc": true, "raim": false, "heading": 255, "lon": 24.95, "lat": 60.05 }
+    },
+    "positionUnavailable": {
+      "topic": "vessels-v2/230713000/location",
+      "data": { "time": 1792430100, "sog": 102.3, "cog": 360, "navStat": 15, "heading": 511, "lon": 24.95, "lat": 60.05 }
+    },
+    "staticClassA": {
+      "topic": "vessels-v2/667002320/metadata",
+      "data": { "callSign": "9LS2023", "destination": "BRMAO ", "draught": 115, "eta": 734336, "imo": 9385831, "name": "LERUO", "posType": 1, "refA": 150, "refB": 30, "refC": 22, "refD": 10, "timestamp": 1792344115035, "type": 80 }
+    },
+    "staticNoVoyage": {
+      "topic": "vessels-v2/230012345/metadata",
+      "data": { "callSign": "OJ3730", "destination": "", "draught": 0, "eta": 0, "imo": 0, "name": "MARINA", "posType": 15, "refA": 6, "refB": 6, "refC": 2, "refD": 2, "timestamp": 1792430176717, "type": 52 }
+    }
+  },
+  "invalid": [
+    { "why": "MMSI with 8 digits", "topic": "vessels-v2/23071300/location", "data": { "lat": 60.05, "lon": 24.95 } },
+    { "why": "MMSI not a number", "topic": "vessels-v2/abc/location", "data": { "lat": 60.05, "lon": 24.95 } },
+    { "why": "position (0,0)", "topic": "vessels-v2/230713000/location", "data": { "lat": 0, "lon": 0 } },
+    { "why": "latitude 91 means not available", "topic": "vessels-v2/230713000/location", "data": { "lat": 91, "lon": 181 } },
+    { "why": "no coordinates", "topic": "vessels-v2/230713000/location", "data": { "sog": 3 } },
+    { "why": "unknown topic", "topic": "vessels-v2/status", "data": { "status": "OK" } },
+    { "why": "payload is not an object", "topic": "vessels-v2/230713000/location", "data": "garbage" }
+  ]
+}

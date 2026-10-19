@@ -14,7 +14,8 @@ import { pipeline } from "node:stream/promises";
 import { createGzip } from "node:zlib";
 
 export type ArchiveLine =
-  | { t: number; m: unknown }
+  // src "rest": static data fetched at start, not a stream message (it does not count for health).
+  | { t: number; m: unknown; src?: "rest" }
   | { t: number; ev: "open" | "close" | "error"; detail?: string };
 
 /** data/raw/YYYY-MM-DD/HH.ndjson, in UTC. */

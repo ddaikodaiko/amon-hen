@@ -161,3 +161,56 @@ export function connectStream(opts: StreamOptions): Stream {
     },
   };
 }
+
+export const DIGITRAFFIC_VESSELS_URL = "https://meri.digitraffic.fi/api/ais/v1/vessels";
+
+interface RestVessel {
+  mmsi: number;
+  name?: string;
+  callSign?: string;
+  imo?: number;
+  destination?: string;
+  draught?: number;
+  eta?: number;
+  shipType?: number;
+  posType?: number;
+  referencePointA?: number;
+  referencePointB?: number;
+  referencePointC?: number;
+  referencePointD?: number;
+  timestamp?: number;
+}
+
+/**
+ * The static data of every vessel Fintraffic knows, as MQTT metadata messages. The stream only
+ * sends metadata when a vessel reports it, so right after a start most class A vessels would
+ * look like class B (research.md, R7). Called once at start; failures are the caller's to log.
+ */
+export async function fetchMetadata(
+  fetchFn: (url: string, init: RequestInit) => Promise<Response> = fetch,
+): Promise<{ topic: string; data: unknown }[]> {
+  const res = await fetchFn(DIGITRAFFIC_VESSELS_URL, {
+    headers: { "Digitraffic-User": "vigia", "Accept-Encoding": "gzip" },
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!res.ok) throw new Error(`vessels metadata: HTTP ${res.status}`);
+  const vessels = (await res.json()) as RestVessel[];
+  return vessels.map((v) => ({
+    topic: `vessels-v2/${v.mmsi}/metadata`,
+    data: {
+      name: v.name,
+      callSign: v.callSign,
+      imo: v.imo,
+      destination: v.destination,
+      draught: v.draught,
+      eta: v.eta,
+      type: v.shipType,
+      posType: v.posType,
+      refA: v.referencePointA,
+      refB: v.referencePointB,
+      refC: v.referencePointC,
+      refD: v.referencePointD,
+      timestamp: v.timestamp,
+    },
+  }));
+}

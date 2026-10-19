@@ -5,7 +5,14 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
+    "demo": "bun run src/cli/demo.ts",
     "ingest": "bun run src/cli/ingest.ts",
+    "server": "bun run src/cli/server.ts",
+    "investigate": "bun run src/cli/investigate.ts",
+    "eval": "bun run src/cli/eval.ts",
+    "brief": "bun run src/cli/brief.ts",
+    "record": "bun run src/cli/record.ts",
+    "demo:build": "bun run src/cli/demo-build.ts",
     "test": "bun test",
     "check": "tsc --noEmit && bun test"
   },
