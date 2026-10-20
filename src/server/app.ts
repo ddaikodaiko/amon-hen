@@ -18,7 +18,9 @@ const metaRoute: Route = {
         ?.spent_usd ?? 0;
     return Response.json({
       mode: app.mode,
-      model: { profile: "local", available: app.modelAvailable() },
+      model: { profile: "local", ...(app.model?.state ?? { available: null, reason: null }) },
+      // Only live says whether the paid profiles could run; the public demo does not tell.
+      paid_ready: app.mode === "live" && app.config.profiles.haiku.apiKey !== undefined,
       budget: { month, spent_usd: spent, cap_usd: app.config.budgetUsd },
       notice: NOTICE,
       attribution: ATTRIBUTION,

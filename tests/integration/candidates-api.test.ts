@@ -38,7 +38,7 @@ async function world(env: Record<string, string> = {}, gate: Promise<void> = Pro
     return client;
   });
   const call = async (path: string, init: RequestInit & { as?: Mode } = {}) => {
-    const handler = createApp({ db, config, mode: init.as ?? "live", modelAvailable: () => null, investigator });
+    const handler = createApp({ db, config, mode: init.as ?? "live", investigator });
     return handler(new Request(`http://localhost${path}`, init));
   };
   return { db, config, investigator, call, ids: { a45, anchor, berth: id(230000107) } };

@@ -44,8 +44,26 @@
     return s.tool ?? "Tool call";
   }
 
-  const canInvestigate = $derived(data.meta.mode === "live" && !["discarded", "detected"].includes(c.state));
   let profile = $state<ProfileName>("local");
+  // Why the button is off, in words that say what is missing (scenario 3 of US2, FR-026).
+  const blocked = $derived.by((): string | null => {
+    const m = data.meta;
+    if (m.mode === "replay") {
+      return "This is the recorded demo, so it is read-only. To investigate, run Vigía live (bun run server) with Ollama serving qwen3:8b at VIGIA_LOCAL_URL, or with ANTHROPIC_API_KEY for the paid profiles.";
+    }
+    if (m.mode === "public") return "This is a public, read-only view.";
+    if (c.state === "discarded" || c.state === "detected") return "The detector discarded this gap: there is nothing to investigate.";
+    if (profile === "local" && m.model.available === false) {
+      const paid = m.paid_ready ? ", or pick a paid profile" : "";
+      return `The local model does not answer (${m.model.reason ?? "no reason given"}). Start Ollama at VIGIA_LOCAL_URL${paid}.`;
+    }
+    if (profile !== "local" && !m.paid_ready) return "The paid profiles need ANTHROPIC_API_KEY in .env.";
+    if (profile !== "local" && m.budget.spent_usd >= m.budget.cap_usd) {
+      return `This month's cap of ${usd(m.budget.cap_usd)} is spent (VIGIA_BUDGET_USD).`;
+    }
+    return null;
+  });
+  const canInvestigate = $derived(blocked === null);
   let queued = $state<string | null>(null);
   let failure = $state<string | null>(null);
   let before: { trigger_at: number | null; versions: number } | null = null;
@@ -122,24 +140,22 @@
   {/if}
 </section>
 
-{#if canInvestigate || data.meta.mode !== "live"}
-  <section class="actions">
-    <label>
-      <span class="muted">Profile</span>
-      <select bind:value={profile} disabled={!canInvestigate || queued !== null}>
-        <option value="local">local</option>
-        <option value="haiku">haiku</option>
-        <option value="sonnet">sonnet</option>
-      </select>
-    </label>
-    <button type="button" disabled={!canInvestigate || queued !== null} onclick={reinvestigate}>
-      {dossiers.length === 0 ? "Investigate" : "Investigate again"}
-    </button>
-    {#if data.meta.mode !== "live"}<span class="muted">Read-only in {data.meta.mode} mode.</span>{/if}
-    {#if queued}<span>{queued}</span>{/if}
-    {#if failure}<span class="danger">{failure}</span>{/if}
-  </section>
-{/if}
+<section class="actions">
+  <label>
+    <span class="muted">Profile</span>
+    <select bind:value={profile} disabled={data.meta.mode !== "live" || queued !== null}>
+      <option value="local">local</option>
+      <option value="haiku" disabled={!data.meta.paid_ready}>haiku</option>
+      <option value="sonnet" disabled={!data.meta.paid_ready}>sonnet</option>
+    </select>
+  </label>
+  <button type="button" disabled={!canInvestigate || queued !== null} onclick={reinvestigate}>
+    {dossiers.length === 0 ? "Investigate" : "Investigate again"}
+  </button>
+  {#if queued}<span>{queued}</span>{/if}
+  {#if failure}<span class="danger">{failure}</span>{/if}
+  {#if blocked}<p class="why muted">{blocked}</p>{/if}
+</section>
 
 {#if dossier === null}
   <p class="empty">No dossier yet.</p>
@@ -244,6 +260,13 @@
     flex-wrap: wrap;
     align-items: end;
     gap: 10px;
+  }
+
+  /* Its own line under the button; the text itself no wider than a paragraph. */
+  .why {
+    flex-basis: 100%;
+    margin: 0;
+    padding-right: max(0px, calc(100% - 70ch));
   }
 
   .actions label {

@@ -32,5 +32,6 @@
 </main>
 
 <footer>
-  Educational project, no warranty · AIS: Fintraffic / digitraffic.fi, CC BY 4.0
+  Educational project, no warranty · AIS: Fintraffic / digitraffic.fi, CC BY 4.0 · Map data © OpenStreetMap
+  contributors, ODbL
 </footer>

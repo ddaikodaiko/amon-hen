@@ -1,13 +1,14 @@
 import type { Config, Mode } from "../config";
 import type { Database } from "../db";
 import type { Investigator } from "./investigator";
+import type { ModelStatus } from "./model-status";
 
 export interface AppContext {
   db: Database;
   config: Config;
   mode: Mode;
-  /** Whether the investigation model answers; null while unknown. */
-  modelAvailable: () => boolean | null;
+  /** Whether the default model answers; only in live mode. */
+  model?: ModelStatus;
   /** Takes the investigations asked for from the panel; only in live mode. */
   investigator?: Investigator;
 }

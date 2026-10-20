@@ -134,7 +134,7 @@ describe("live stream", () => {
 describe("GET /api/stream", () => {
   const app = async (mode: "replay" | "live") => {
     const { db } = await world();
-    return createApp({ db, config: loadConfig({}), mode, modelAvailable: () => null });
+    return createApp({ db, config: loadConfig({}), mode });
   };
 
   test("an event stream that starts with hello", async () => {

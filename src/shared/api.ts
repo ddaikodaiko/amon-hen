@@ -120,7 +120,10 @@ export interface Reinvestigation {
 
 export interface Meta {
   mode: "live" | "replay" | "public";
-  model: { profile: ProfileName; available: boolean | null };
+  /** The default model; `available` is null where nobody checks it (replay, public) or before the first check. */
+  model: { profile: ProfileName; available: boolean | null; reason: string | null };
+  /** Live only: whether ANTHROPIC_API_KEY is set, so the paid profiles can be asked for. */
+  paid_ready: boolean;
   budget: { month: string; spent_usd: number; cap_usd: number };
   notice: string;
   attribution: string;

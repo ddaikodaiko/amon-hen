@@ -12,7 +12,7 @@ function app() {
   const db = openDb(":memory:");
   play(db, T0, END);
   computeCoverage(db, END);
-  return createApp({ db, config: loadConfig({}), mode: "public", modelAvailable: () => null });
+  return createApp({ db, config: loadConfig({}), mode: "public" });
 }
 const get = async <T>(path: string) => {
   const res = await app()(new Request(`http://localhost${path}`));
