@@ -175,3 +175,112 @@ export interface VesselDetail extends VesselInfo {
   /** The positions of the `hours` before `at`, oldest first. */
   track: TrackPoint[];
 }
+
+export type LabelValue = "coverage_gap" | "likely_dark" | "undeterminable";
+
+/** A proportion with its 95 % Wilson interval. */
+export interface Interval {
+  p: number;
+  low: number;
+  high: number;
+}
+
+/** Where the labelled sample stands against the stopping rule (FR-021). */
+export interface StoppingState {
+  met: boolean;
+  /** `rare_positives`: 300 cases without 15 likely_dark; published, saying so. */
+  status: "enough" | "rare_positives" | "insufficient";
+  missing_cases: number;
+  missing_positives: number;
+}
+
+export interface LabelProgress {
+  labeled: number;
+  positives: number;
+  undeterminable: number;
+  /** Cases waiting for a label. */
+  remaining: number;
+  stopping: StoppingState;
+}
+
+/** The case to label: the gap, the vessel and its track, and nothing the agent said, not even the state. */
+export interface LabelCase {
+  id: number;
+  mmsi: number;
+  gap_start: number;
+  gap_end: number | null;
+  duration_min: number | null;
+  start: Point;
+  end: Point | null;
+  nav_status_start: number | null;
+  vessel: VesselInfo;
+  /** From 3 h before the gap to 2 h after it ends, oldest first. */
+  track: TrackPoint[];
+}
+
+/** GET /api/label/next */
+export interface LabelNext {
+  /** Null when every case is labelled. */
+  case: LabelCase | null;
+  progress: LabelProgress;
+}
+
+/** POST /api/labels → 201 */
+export interface LabelSaved {
+  label: { candidate_id: number; value: LabelValue; note: string | null; author: string; created_at: number };
+  /** The agent's newest dossier, now that it can be shown; null if the case was not investigated. */
+  dossier: { version: number; verdict: VerdictValue; confidence: Confidence; explanation: string; profile: ProfileName } | null;
+  progress: LabelProgress;
+}
+
+/** likely_dark against the rest, without the cases labelled undeterminable. */
+export interface EvalScores {
+  tp: number;
+  fp: number;
+  fn: number;
+  tn: number;
+  /** Of the cases called likely_dark, how many were; null if none was called so. */
+  precision: Interval | null;
+  /** Of the likely_dark cases, how many were called so; null if there were none. */
+  recall: Interval | null;
+  undeterminable: number;
+}
+
+export interface CostSummary {
+  /** Over the dossiers the report used. */
+  mean_usd_per_case: number | null;
+  by_profile: Partial<Record<ProfileName, { cases: number; mean_usd: number }>>;
+}
+
+export interface EvalMetrics {
+  /** Over the labelled cases with a dossier. */
+  agent: EvalScores;
+  /** The 60-minute rule, over every labelled case. */
+  naive: EvalScores;
+  cost: CostSummary;
+  stopping: StoppingState;
+  /** Labelled cases the agent has no dossier for (or none of the profile asked for). */
+  not_investigated: number;
+  /** Gaps the detector threw out over the labelled period, by reason: they are not in the sample. */
+  discarded: Record<DiscardReason, number>;
+}
+
+export interface EvalReport {
+  id: number;
+  created_at: number;
+  /** Several, comma-separated, when the dossiers come from different versions. */
+  agent_version: string;
+  /** The profile the eval ran; null when it took each case's newest dossier. */
+  profile: ProfileName | null;
+  n_labeled: number;
+  n_positive: number;
+  n_undeterminable: number;
+  stopping_rule_met: boolean;
+  metrics: EvalMetrics;
+}
+
+/** GET /api/eval/reports */
+export interface EvalReports {
+  /** The newest first. */
+  items: EvalReport[];
+}

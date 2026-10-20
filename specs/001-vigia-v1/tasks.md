@@ -354,42 +354,52 @@ description: "Tareas de Vigía v1, por historia de usuario"
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T050 [P] [US3] [clase] `tests/unit/eval.test.ts`:
+- [x] T050 [P] [US3] [clase] `tests/unit/eval.test.ts`:
   - Wilson con un valor de referencia: 8 de 10 → [0,490, 0,943];
   - la matriz de confusión, sin contar `undeterminable`;
   - la regla de parada: 99 casos, insuficiente; 100 casos con 14 positivos, insuficiente; 300 casos sin 15 positivos, "positivos raros";
   - la regla de 60 min da lo mismo dos veces.
-- [ ] T051 [P] [US3] [clase] `tests/integration/label-blind.test.ts`:
+- [x] T051 [P] [US3] [clase] `tests/integration/label-blind.test.ts`:
   - `GET /api/label/next` no lleva ningún campo del veredicto, sigue el orden cronológico y se salta los descartados;
   - `POST /api/labels` guarda la etiqueta y responde con el veredicto.
+  **Hecho (2026-10-20):** cinco tests. Uno busca en el JSON de `label/next` cualquier clave del agente (verdict, confidence, dossier, state, profile…) y cualquier valor de veredicto. Otro etiqueta la muestra entera y comprueba que el orden es el de `gap_start` y que no sale ningún descartado. También cubre 409 `already_labeled` e `invalid_state`, 404, 400 y 403 en replay.
 
 ### Implementation for User Story 3
 
-- [ ] T052 [P] [US3] [clase] El cálculo del eval, en cuatro archivos:
+- [x] T052 [P] [US3] [clase] El cálculo del eval, en cuatro archivos:
   - `src/eval/wilson.ts`;
   - `src/eval/metrics.ts`: tp, fp, fn y tn de `likely_dark` frente al resto; la precisión y la exhaustividad con su intervalo de Wilson; el coste medio por caso y por perfil;
   - `src/eval/naive.ts`: todo gap de más de 60 min es `likely_dark`;
   - `src/eval/stopping.ts`: la regla de parada (FR-021).
+  **Hecho (2026-10-20):**
+  - Los tipos del informe (`EvalScores`, `EvalMetrics`, `EvalReport`, `StoppingState`, `Interval`) viven en `src/shared/api.ts` y `src/eval` los usa.
+  - La regla de 60 min cuenta un gap abierto (que llegó a las 6 h) como `likely_dark`.
+  - El informe (`src/eval/report.ts`) mide la regla sobre todos los casos etiquetados, así que repetirla da lo mismo (SC-003). Al agente lo mide sobre los que tienen expediente, y dice cuántos no lo tienen. También cuenta los descartados del mismo periodo, por motivo (R12).
+  - Sin perfil, `agent_version` lista las versiones de los expedientes usados, separadas por comas.
 
   Hace pasar T050.
-- [ ] T053 [US3] [clase] `src/server/routes/labels.ts`:
+- [x] T053 [US3] [clase] `src/server/routes/labels.ts`:
   - `GET /api/label/next`;
   - `POST /api/labels` (✎), con `author` = el usuario del sistema (`os.userInfo().username`);
   - `GET /api/eval/reports`.
+  **Hecho (2026-10-20):** `label/next` no lleva ni el estado del caso. Una segunda etiqueta del mismo caso es un 409 `already_labeled`, porque tras ver el veredicto ya no sería a ciegas. La muestra es todo lo que no es `detected` ni `discarded`, es decir, los casos cuyo disparo ya saltó. El POST no obliga a que sea el siguiente: eso lo garantiza la vista, que solo ofrece ese.
 
   Hace pasar T051.
-- [ ] T054 [US3] [clase] `panel/src/routes/label/+page.svelte`:
+- [x] T054 [US3] [clase] `panel/src/routes/label/+page.svelte`:
   - muestra el siguiente caso: un mapa pequeño con el rastro y el gap, y los datos del buque. Sin el veredicto;
   - las teclas 1, 2 y 3 son `coverage_gap`, `likely_dark` y `undeterminable`, con una nota opcional;
   - al guardar, revela el veredicto del agente y pasa al siguiente caso.
-- [ ] T055 [US3] [clase] `src/cli/eval.ts` (`bun run eval [--profile]`):
+  **Hecho (2026-10-20):** `#lib/map/GapMap.svelte` es un mapa pequeño con el rastro de antes (blanco), el silencio (discontinuo, en línea recta) y el de después (azul). Las teclas 1, 2 y 3 guardan, salvo dentro de la nota (Esc sale de ella). Al guardar, la vista enseña el veredicto, si coincide en "apagado o no" y la explicación, y Enter pasa al siguiente. En replay y en la vista pública los botones están desactivados con el motivo. Comprobado en headless sobre la base de desarrollo.
+- [x] T055 [US3] [clase] `src/cli/eval.ts` (`bun run eval [--profile]`):
   - con perfil, reinvestiga los casos etiquetados con ese perfil, respetando el tope;
   - sin perfil, usa el último expediente de cada caso;
   - calcula las métricas con T052, guarda el informe en `eval_reports` con `agent_version` e imprime un resumen.
-- [ ] T056 [US3] [clase] `panel/src/routes/eval/+page.svelte`:
+  **Hecho (2026-10-20):** `src/eval/run.ts` (`investigateLabeled`) investiga con el perfil solo, sin escalar, para medir ese modelo. No repite un caso que ya tiene un expediente de esa versión exacta, salvo con `--fresh`, lo que ahorra tiempo en local y dinero en los de pago. Se para con el tope o sin modelo. `tests/integration/eval-report.test.ts` (7 tests) cubre el informe, la reutilización y las paradas.
+- [x] T056 [US3] [clase] `panel/src/routes/eval/+page.svelte`:
   - el último informe: el agente frente a la regla, con la precisión y la exhaustividad y sus intervalos, la matriz de confusión, el coste por caso y por perfil, n, la fecha y la versión;
   - el aviso de *muestra insuficiente*, con lo que falta;
   - el historial de informes.
+  **Hecho (2026-10-20):** precisión y exhaustividad con su intervalo, como texto y como barra; las dos matrices; el coste por caso y por perfil; los descartados del periodo; y el historial (`?id=` abre uno anterior). Si la muestra es insuficiente, un aviso dice cuántos casos y positivos faltan.
 - [ ] T057 [US3] [bloque] Sesiones de etiquetado de los candidatos no descartados, en orden cronológico, hasta cumplir la regla de parada (100 casos o más y al menos 15 `likely_dark`, o 300 casos). Son varias sesiones, sin mirar el veredicto antes de etiquetar. Necesita días de datos de la Pi.
 - [ ] T058 [US3] [bloque] Con el PC encendido, `bun run eval --profile local` sobre la muestra completa. Comprobar que las cifras de la regla salen iguales al repetirlo (SC-003).
 

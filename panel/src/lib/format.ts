@@ -1,4 +1,4 @@
-import type { CandidateState, Confidence, DiscardReason, VerdictValue } from "./api";
+import type { CandidateState, Confidence, DiscardReason, Interval, LabelValue, VerdictValue } from "./api";
 
 // How the panel words and formats things. Times are shown in UTC, as the data is.
 
@@ -6,6 +6,25 @@ export const VERDICT_LABEL: Record<VerdictValue, string> = {
   likely_dark: "Likely dark",
   coverage_gap: "Coverage gap",
   inconclusive: "Inconclusive",
+};
+
+export const LABEL_LABEL: Record<LabelValue, string> = {
+  coverage_gap: "Coverage gap",
+  likely_dark: "Likely dark",
+  undeterminable: "Undeterminable",
+};
+
+/** ITU navigation status, as the vessel set it. */
+export const NAV_STATUS: Record<number, string> = {
+  0: "under way using engine",
+  1: "at anchor",
+  2: "not under command",
+  3: "restricted manoeuvrability",
+  4: "constrained by draught",
+  5: "moored",
+  6: "aground",
+  7: "engaged in fishing",
+  8: "under way sailing",
 };
 
 export const CONFIDENCE_LABEL: Record<Confidence, string> = { high: "high", medium: "medium", low: "low" };
@@ -59,6 +78,11 @@ export function usd(n: number): string {
   if (n === 0) return "$0";
   if (n < 0.01) return `$${n.toFixed(4)}`;
   return `$${n.toFixed(2)}`;
+}
+
+/** 0.72 [0.55, 0.85] */
+export function interval(i: Interval | null): string {
+  return i === null ? "—" : `${i.p.toFixed(2)} [${i.low.toFixed(2)}, ${i.high.toFixed(2)}]`;
 }
 
 export function tokens(n: number): string {

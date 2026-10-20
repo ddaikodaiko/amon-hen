@@ -5,6 +5,10 @@ import type {
   CandidateDetail,
   CandidateList,
   CandidateState,
+  EvalReports,
+  LabelNext,
+  LabelSaved,
+  LabelValue,
   Meta,
   ProfileName,
   Reinvestigation,
@@ -66,4 +70,12 @@ export const api = {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(profile === undefined ? {} : { profile }),
     }),
+  labelNext: (fetcher: Fetch = fetch) => request<LabelNext>(fetcher, "/api/label/next"),
+  label: (candidate_id: number, value: LabelValue, note: string, fetcher: Fetch = fetch) =>
+    request<LabelSaved>(fetcher, "/api/labels", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ candidate_id, value, note }),
+    }),
+  evalReports: (fetcher: Fetch = fetch) => request<EvalReports>(fetcher, "/api/eval/reports"),
 };

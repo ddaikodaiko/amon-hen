@@ -191,3 +191,75 @@ export function trackData(track: TrackPoint[]): Collection<LineString | Point> {
     ],
   };
 }
+
+/** The track around a gap: before and after it as lines, the silence dashed between them. */
+export function gapData(g: {
+  gap_start: number;
+  gap_end: number | null;
+  start: { lat: number; lon: number };
+  end: { lat: number; lon: number } | null;
+  track: TrackPoint[];
+}): Collection<LineString | Point> {
+  const line = (part: string, pts: [number, number][]) =>
+    pts.length > 1 ? [{ type: "Feature" as const, geometry: { type: "LineString" as const, coordinates: pts }, properties: { part } }] : [];
+  const point = (part: string, p: { lat: number; lon: number }) => ({
+    type: "Feature" as const,
+    geometry: { type: "Point" as const, coordinates: [p.lon, p.lat] as [number, number] },
+    properties: { part },
+  });
+  const lonlat = ([, lat, lon]: TrackPoint): [number, number] => [lon, lat];
+  const before = g.track.filter(([ts]) => ts <= g.gap_start).map(lonlat);
+  const after = g.gap_end === null ? [] : g.track.filter(([ts]) => ts >= g.gap_end!).map(lonlat);
+  const s: [number, number] = [g.start.lon, g.start.lat];
+  return {
+    type: "FeatureCollection",
+    features: [
+      ...line("before", before),
+      ...line("after", after),
+      ...(g.end === null ? [] : line("gap", [s, [g.end.lon, g.end.lat]])),
+      point("start", g.start),
+      ...(g.end === null ? [] : [point("end", g.end)]),
+    ],
+  };
+}
+
+export const GAP_LAYERS: LayerSpecification[] = [
+  {
+    id: "gap-track",
+    type: "line",
+    source: "gap",
+    filter: ["in", ["get", "part"], ["literal", ["before", "after"]]],
+    paint: { "line-color": ["match", ["get", "part"], "before", COLOR.vessel, COLOR.selected], "line-width": 2 },
+  },
+  {
+    id: "gap-silence",
+    type: "line",
+    source: "gap",
+    filter: ["==", ["get", "part"], "gap"],
+    paint: { "line-color": COLOR.inconclusive, "line-width": 2, "line-dasharray": [2, 2] },
+  },
+  {
+    id: "gap-points",
+    type: "circle",
+    source: "gap",
+    filter: ["==", ["geometry-type"], "Point"],
+    paint: {
+      "circle-radius": 5,
+      "circle-color": ["match", ["get", "part"], "start", COLOR.vessel, COLOR.selected],
+      "circle-stroke-color": COLOR.sea,
+      "circle-stroke-width": 2,
+    },
+  },
+];
+
+/** The box around every coordinate of a collection. */
+export function boundsOf(c: Collection<LineString | Point>): [[number, number], [number, number]] | null {
+  const pts = c.features.flatMap((f) => (f.geometry.type === "Point" ? [f.geometry.coordinates] : f.geometry.coordinates));
+  if (pts.length === 0) return null;
+  const lons = pts.map((p) => p[0]);
+  const lats = pts.map((p) => p[1]);
+  return [
+    [Math.min(...lons), Math.min(...lats)],
+    [Math.max(...lons), Math.max(...lats)],
+  ];
+}
