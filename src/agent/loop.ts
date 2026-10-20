@@ -19,6 +19,9 @@ export const LIMITS = {
 } as const;
 
 const MAX_OUTPUT_JSON = 32 * 1024;
+/** Room kept for the model's reply when fitting a conversation into its context. */
+const REPLY_ROOM = 1_024;
+const DROPPED = "data dropped to fit the model's context; the summary stands";
 
 export type StepKind = "model_call" | "tool_call" | "nudge" | "error";
 
@@ -79,6 +82,34 @@ function describeReply(content: Anthropic.ContentBlock[]): string {
   return [clip(text, 280), asks].filter((s) => s !== "").join(" ") || "Empty reply.";
 }
 
+/**
+ * Keeps a request within the model's context. Ollama cuts a conversation that outgrows it without
+ * saying so, oldest messages first, so the briefing goes before anything else: on 2026-10-20, 84 of
+ * the first 115 investigations went past its default 4,096 tokens. Here, the oldest tool results
+ * keep only their step and summary instead, in place, so later calls stay small too; the step can
+ * still be cited. Returns how many it cut, or null if even that is not enough. The paid models
+ * have 200k tokens, so for them it never cuts and the history stays exactly as sent (R3).
+ */
+export function fitContext(params: ModelParams, contextTokens: number): number | null {
+  let size = estimateTokens(JSON.stringify(params));
+  let cut = 0;
+  for (const m of params.messages) {
+    if (size + REPLY_ROOM <= contextTokens) return cut;
+    if (m.role !== "user" || typeof m.content === "string") continue;
+    for (const b of m.content) {
+      if (b.type !== "tool_result" || b.is_error || typeof b.content !== "string") continue;
+      const r = JSON.parse(b.content) as { step: number; summary: string; data?: unknown };
+      if (r.data === undefined) continue;
+      const short = JSON.stringify({ step: r.step, summary: r.summary, note: DROPPED });
+      size -= estimateTokens(b.content) - estimateTokens(short);
+      b.content = short;
+      cut++;
+      if (size + REPLY_ROOM <= contextTokens) return cut;
+    }
+  }
+  return size + REPLY_ROOM <= contextTokens ? cut : null;
+}
+
 /** A dropped connection or a server error means "no model now"; the case waits for it to come back. */
 export function unreachable(err: unknown): string | null {
   if (err instanceof Anthropic.APIConnectionError) return err.message;
@@ -96,6 +127,7 @@ export async function runLoop(cfg: LoopConfig): Promise<{ end: LoopEnd; steps: T
   let nudges = 0;
   let badVerdicts = 0;
   let overLimit = false;
+  let trimmed = 0;
 
   const push = (s: Omit<TraceStep, "idx" | "ts" | "model" | "input_tokens" | "output_tokens" | "cost_usd"> & Partial<TraceStep>) => {
     const step: TraceStep = { model: null, input_tokens: 0, output_tokens: 0, cost_usd: 0, ts: now(), ...s, idx: (cfg.firstIdx ?? 0) + steps.length };
@@ -111,6 +143,14 @@ export async function runLoop(cfg: LoopConfig): Promise<{ end: LoopEnd; steps: T
       max_tokens: LIMITS.maxTokens,
       messages,
     };
+    const cut = fitContext(params, cfg.profile.contextTokens);
+    if (cut === null) {
+      return {
+        end: { kind: "failed", reason: `the investigation does not fit the model's context of ${cfg.profile.contextTokens} tokens, even with only the summaries of its tool results` },
+        steps,
+      };
+    }
+    trimmed += cut;
     const worst = worstCaseUsd(cfg.profile, estimateTokens(JSON.stringify(params)), LIMITS.maxTokens);
     if (!canSpend(cfg.db, cfg.profile, worst, cfg.capUsd, now())) return { end: { kind: "budget" }, steps };
 
@@ -129,7 +169,8 @@ export async function runLoop(cfg: LoopConfig): Promise<{ end: LoopEnd; steps: T
     push({
       kind: "model_call",
       tool: null,
-      input_json: JSON.stringify({ messages: messages.length, max_tokens: LIMITS.maxTokens }),
+      // How many tool results had their data dropped to fit the context so far (0 is left out).
+      input_json: JSON.stringify({ messages: messages.length, max_tokens: LIMITS.maxTokens, ...(trimmed > 0 ? { trimmed_results: trimmed } : {}) }),
       output_summary: describeReply(response.content),
       output_json: null,
       model: response.model,

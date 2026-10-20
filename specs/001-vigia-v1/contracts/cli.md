@@ -23,6 +23,7 @@
 | `ANTHROPIC_API_KEY` | Solo para los perfiles de pago | — |
 | `VIGIA_LOCAL_URL` | Ollama | `http://pc-casa:11434` |
 | `VIGIA_LOCAL_MODEL` | Modelo local | `qwen3:8b` |
+| `VIGIA_LOCAL_CONTEXT` | Contexto del modelo local, en tokens. Tiene que ser el mismo que `OLLAMA_CONTEXT_LENGTH` en el PC. Si una investigación no cabe, los resultados de herramientas más antiguos se quedan solo con su resumen; si ni así cabe, el caso acaba en error | `4096` (el de Ollama) |
 | `VIGIA_ESCALATE_PROFILE` | Perfil de escalado | `none` |
 | `VIGIA_BUDGET_USD` | Tope mensual de pago | `0` |
 | `VIGIA_MODE` | `live`, `replay` o `public` | — |

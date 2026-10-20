@@ -49,6 +49,10 @@ The agent is measured on cases labelled by hand, blind: the labelling view shows
 - AIS is self-reported. A vessel can lie about who it is or where it is; the agent can only notice what the data shows.
 - A verdict is an analyst's note from the data, not a finding. *Likely dark* means the evidence points to a transponder switched off, not why.
 
+## Roadmap
+
+What is left for v1, what would make Vigía trustworthy beyond it, and how it compares with Windward, Kpler, Skylight and Global Fishing Watch: [`docs/roadmap.md`](docs/roadmap.md).
+
 ## Running it live
 
 A Raspberry Pi 5 records and serves; a home PC with a GPU runs the model over Tailscale. See [`specs/001-vigia-v1/quickstart.md`](specs/001-vigia-v1/quickstart.md) and the systemd units in [`deploy/`](deploy/). Configuration goes in `.env` (see [`.env.example`](.env.example)).

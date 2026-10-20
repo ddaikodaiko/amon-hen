@@ -28,6 +28,7 @@ Todo en 5 minutos o menos.
 3. **En el PC de casa (RTX 3060 Ti):**
    - instalar Ollama y descargar el modelo: `ollama pull qwen3:8b`;
    - poner `OLLAMA_HOST=0.0.0.0` para que escuche en la red;
+   - subir el contexto, que por defecto es de 4.096 tokens y no da para una investigación: `OLLAMA_CONTEXT_LENGTH=16384`, `OLLAMA_FLASH_ATTENTION=1` y `OLLAMA_KV_CACHE_TYPE=q8_0` (así cabe en 8 GB). Reiniciar Ollama y comprobar con `ollama ps` que la columna `CONTEXT` dice 16384. En el `.env` de Vigía, `VIGIA_LOCAL_CONTEXT=16384`;
    - instalar Tailscale y meter el PC en la tailnet. Desde la Pi, comprobar que responde: `curl http://<pc>:11434/api/version`.
 4. **En la Pi:**
    - instalar Bun y clonar el repo en `~/vigia`, con `bun install`;

@@ -248,7 +248,11 @@ description: "Tareas de Vigía v1, por historia de usuario"
   **Hecho (2026-10-20):** `recoverInterrupted` devuelve a `pending_no_model` los casos que llevan más de 15 min en `investigating` (un proceso que murió a mitad). Con 15 min no toca la investigación en curso de otro proceso.
 - [x] T030 [US1] [clase] `src/cli/investigate.ts`: `bun run investigate [--ids 1,2] [--all-pending] --profile local|haiku|sonnet`, para lanzar investigaciones sobre los datos importados. Ya está en `contracts/cli.md`.
   **Hecho (2026-10-20):** antes de investigar pone al día el detector y la cobertura (son idempotentes), porque sobre una importación no hay servidor que los ejecute. Si el modelo no responde o no hay presupuesto, se para. Sobre las 2 h grabadas, con el PC apagado: 24 candidatos listos y el primero en `pending_no_model` en 3 s.
-- [ ] T031 [US1] [bloque] Primera conexión real: con Ollama y `qwen3:8b` en el PC, por Tailscale, `bun run investigate` sobre 3 candidatos de la muestra de T002. Comprobar que, con el SDK, el `/v1/messages` de Ollama acepta `tools` y devuelve `tool_use` y `usage`. Anotar en `research.md` (R1) lo que no funcione. Necesita el PC.
+- [x] T031 [US1] [bloque] Primera conexión real: con Ollama y `qwen3:8b` en el PC, por Tailscale, `bun run investigate` sobre 3 candidatos de la muestra de T002. Comprobar que, con el SDK, el `/v1/messages` de Ollama acepta `tools` y devuelve `tool_use` y `usage`. Anotar en `research.md` (R1) lo que no funcione. Necesita el PC.
+  **Hecho (2026-10-20), con datos en vivo en lugar de 3 candidatos:** el servidor investigó solo 115 casos en cuanto se encendió el PC, unos 14 s y 0 $ cada uno. `tools`, `tool_use` y `usage` funcionan. Lo que no funcionó, ya arreglado:
+  - a veces Ollama responde con `content: null`: se toma como respuesta vacía, que recibe el aviso;
+  - un fallo inesperado dejaba el caso en `investigating` para siempre: ahora pasa a `error` y la cola sigue;
+  - **el contexto de 4.096 tokens**: 84 de las 115 investigaciones lo pasaron y Ollama las recortó sin avisar (R1). Una repitió entera su secuencia de herramientas tras perder el principio. Ahora el perfil tiene `contextTokens` (`VIGIA_LOCAL_CONTEXT`) y el bucle nunca se pasa. Falta subir `OLLAMA_CONTEXT_LENGTH` en el PC y reinvestigar esos 84 casos.
 - [ ] T032 [US1] [bloque] `src/agent/tools/get_gfw_events.ts`:
   - `GET /v3/events` con `GFW_TOKEN`, sobre los datasets de gaps, encounters y loitering. Hay que comprobar sus nombres y el retraso de los datos (R9);
   - timeout de 10 s y `{unavailable: reason}` si falla.

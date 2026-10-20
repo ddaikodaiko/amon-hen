@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { estimateTokens } from "../../src/agent/budget";
 import { type InvestigateDeps, investigate } from "../../src/agent/investigate";
 import { FakeClient, type ScriptedReply } from "../../src/agent/model";
 import { loadConfig, type ProfileName } from "../../src/config";
@@ -15,7 +16,9 @@ const SCRIPTS = join(import.meta.dir, "../fixtures/scripts");
 const script = (name: string): ScriptedReply[] =>
   (JSON.parse(readFileSync(join(SCRIPTS, `${name}.json`), "utf8")) as { replies: ScriptedReply[] }).replies;
 const fake = (name: string, profile: ProfileName = "local") => new FakeClient(script(name), profile);
-const { profiles } = loadConfig({});
+// The context the PC is meant to run with; the tests of the context guard set their own.
+const { profiles } = loadConfig({ VIGIA_LOCAL_CONTEXT: "16384" });
+const withContext = (contextTokens: number) => ({ ...profiles, local: { ...profiles.local, contextTokens } });
 
 type Db = ReturnType<typeof openDb>;
 
@@ -173,6 +176,39 @@ describe("agent loop", () => {
 });
 
 describe("model availability", () => {
+  test("(j) a conversation that would outgrow the context keeps only the summaries of its oldest tool results", async () => {
+    // How big the second request is with everything in it.
+    const roomy = setup();
+    const full = fake("happy");
+    await investigate(roomy.db, roomy.id, deps({ primary: full }));
+    const size = estimateTokens(JSON.stringify(full.calls[1]));
+
+    // One token less than that needs, with room for the reply.
+    const { db, id } = setup();
+    const client = fake("happy");
+    const out = await investigate(db, id, deps({ primary: client, profiles: withContext(size + 1024 - 1) }));
+    expect(out).toMatchObject({ state: "investigated" });
+    const sent = JSON.stringify(client.calls[1]!.messages.at(-1));
+    // The first result (get_track, step 1) lost its data and kept its step and summary; the second is whole.
+    expect(sent).toContain('\\"step\\":1,\\"summary\\"');
+    expect(sent).toContain("data dropped to fit the model's context");
+    expect(sent).toContain('\\"step\\":2,\\"summary\\"');
+    expect(sent.match(/data dropped/g)).toHaveLength(1);
+    // The model call says so in its trace, and the evidence still links to step 1.
+    const call = db.query<{ input_json: string }, []>("SELECT input_json FROM trace_steps WHERE idx = 3").get()!;
+    expect(JSON.parse(call.input_json)).toMatchObject({ trimmed_results: 1 });
+    expect(db.query<{ step_idx: number }, []>("SELECT step_idx FROM evidence ORDER BY step_idx").all().map((e) => e.step_idx)).toEqual([1, 2]);
+  });
+
+  test("(j) if even the summaries do not fit, no call is made and the case ends in error, saying why", async () => {
+    const { db, id } = setup();
+    const client = fake("happy");
+    const out = await investigate(db, id, deps({ primary: client, profiles: withContext(2048) }));
+    expect(out).toEqual({ state: "error", reason: "the investigation does not fit the model's context of 2048 tokens, even with only the summaries of its tool results" });
+    expect(client.calls).toHaveLength(0);
+    expect(state(db, id)).toBe("error");
+  });
+
   test("with the model unreachable, no call is made and the case waits in pending_no_model", async () => {
     const { db, id } = setup();
     const client = fake("happy");

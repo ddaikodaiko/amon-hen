@@ -43,6 +43,8 @@ export interface Profile {
   usdPerMTokIn: number;
   usdPerMTokOut: number;
   paid: boolean;
+  /** The model's context in tokens: a conversation never grows past it (src/agent/loop.ts). */
+  contextTokens: number;
 }
 
 export interface Config {
@@ -63,6 +65,8 @@ const EnvSchema = z.object({
   ANTHROPIC_API_KEY: z.preprocess(blank, z.string().optional()),
   VIGIA_LOCAL_URL: z.preprocess(blank, z.url().default("http://pc-casa:11434")),
   VIGIA_LOCAL_MODEL: z.preprocess(blank, z.string().default("qwen3:8b")),
+  // Ollama's own default; raise both together (OLLAMA_CONTEXT_LENGTH on the PC).
+  VIGIA_LOCAL_CONTEXT: z.preprocess(blank, z.coerce.number().int().min(2048).default(4096)),
   VIGIA_ESCALATE_PROFILE: z.preprocess(blank, z.enum(["none", "haiku", "sonnet"]).default("none")),
   VIGIA_BUDGET_USD: z.preprocess(blank, z.coerce.number().min(0).default(0)),
   VIGIA_MODE: z.preprocess(blank, z.enum(MODES).optional()),
@@ -94,6 +98,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
         usdPerMTokIn: 0,
         usdPerMTokOut: 0,
         paid: false,
+        contextTokens: e.VIGIA_LOCAL_CONTEXT,
       },
       haiku: {
         name: "haiku",
@@ -103,6 +108,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
         usdPerMTokIn: 0.1,
         usdPerMTokOut: 0.5,
         paid: true,
+        contextTokens: 200_000,
       },
       sonnet: {
         name: "sonnet",
@@ -112,6 +118,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
         usdPerMTokIn: 2,
         usdPerMTokOut: 10,
         paid: true,
+        contextTokens: 200_000,
       },
     },
   };
