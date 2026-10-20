@@ -1,6 +1,7 @@
 import { existsSync, statSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
 import { type AppContext, errorResponse, HttpError, matchPath, type Route } from "./http";
+import { CANDIDATE_ROUTES } from "./routes/candidates";
 
 export const NOTICE = "Educational project, no warranty";
 export const ATTRIBUTION = "Source: Fintraffic / digitraffic.fi, CC BY 4.0";
@@ -23,7 +24,7 @@ const metaRoute: Route = {
   },
 };
 
-export const ROUTES: Route[] = [metaRoute];
+export const ROUTES: Route[] = [metaRoute, ...CANDIDATE_ROUTES];
 
 export interface AppOptions {
   /** Built panel (panel/build). Missing → the API still works. */

@@ -1,5 +1,6 @@
 import type { Config, Mode } from "../config";
 import type { Database } from "../db";
+import type { Investigator } from "./investigator";
 
 export interface AppContext {
   db: Database;
@@ -7,6 +8,8 @@ export interface AppContext {
   mode: Mode;
   /** Whether the investigation model answers; null while unknown. */
   modelAvailable: () => boolean | null;
+  /** Takes the investigations asked for from the panel; only in live mode. */
+  investigator?: Investigator;
 }
 
 export interface RequestContext {
@@ -29,7 +32,7 @@ export interface Route {
 
 export class HttpError extends Error {
   constructor(
-    readonly status: 400 | 403 | 404 | 405 | 500,
+    readonly status: 400 | 403 | 404 | 405 | 409 | 500,
     readonly code: string,
     message: string,
   ) {
@@ -44,6 +47,17 @@ export function errorResponse(status: number, code: string, message: string): Re
 export async function readJson(req: Request): Promise<unknown> {
   try {
     return await req.json();
+  } catch {
+    throw new HttpError(400, "invalid_json", "the request body is not valid JSON");
+  }
+}
+
+/** The JSON body, or `empty` when there is none. */
+export async function readOptionalJson(req: Request, empty: unknown): Promise<unknown> {
+  const text = await req.text();
+  if (text.trim() === "") return empty;
+  try {
+    return JSON.parse(text);
   } catch {
     throw new HttpError(400, "invalid_json", "the request body is not valid JSON");
   }

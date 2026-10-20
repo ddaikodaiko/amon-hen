@@ -7,6 +7,7 @@ import { computeCoverage } from "../coverage/compute";
 import { openDb } from "../db";
 import { runDetector } from "../detect/run";
 import { healthClosedUntil } from "../ingest/health";
+import { escalationOf } from "../server/investigator";
 
 // bun run investigate [--ids 1,2] [--all-pending] --profile local|haiku|sonnet
 // Brings the detector and the coverage up to date, then investigates those candidates, or all the
@@ -47,8 +48,8 @@ const { cells } = computeCoverage(db, coverageEnd);
 log(`detector: ${found.created} new gaps, ${found.discarded} discarded, ${found.triggered} ready; coverage: ${cells} cell-hours`);
 
 const ids = args.ids !== undefined ? args.ids.split(",").map((s) => Number(s.trim())) : waiting(db);
-const escalateName = config.escalateProfile;
-const escalate = escalateName !== "none" && escalateName !== profile ? new AnthropicClient(config.profiles[escalateName]) : null;
+const escalateName = escalationOf(config, profile);
+const escalate = escalateName === null ? null : new AnthropicClient(config.profiles[escalateName]);
 const primary = new AnthropicClient(chosen);
 log(`${ids.length} candidates with ${profile} (${chosen.model})${escalate === null ? "" : `, escalating to ${escalateName}`}`);
 

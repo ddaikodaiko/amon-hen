@@ -11,6 +11,7 @@
 | `bun run brief [--date YYYY-MM-DD]` | Genera la parte determinista del brief y, si hay modelo, la narrativa | La base |
 | `bun run record --from <ISO> --to <ISO> --kind demo\|eval --out <ruta>` | Exporta una ventana a una base aparte; para la demo, reduce a una posición por minuto | La base y el archivo crudo |
 | `bun run demo:build --from <ISO> --to <ISO>` | Investiga en la base principal, con los datos completos, los candidatos de la ventana sin expediente → `record --kind demo` → copia los briefs y el informe de eval → `demo/vigia-demo.sqlite` (50 MB como mucho) | Un perfil de modelo |
+| `bun run dev:db [--out data/dev.sqlite]` | Crea una base de desarrollo con los rastros sintéticos de las pruebas y casos investigados por modelos de guion, uno en cada estado. Para trabajar en el panel sin modelo: `VIGIA_DB=data/dev.sqlite bun run server` | Nada |
 | `bun test` | Todas las pruebas, sin red ni keys | Nada |
 | `bun run check` | `tsc --noEmit` y `bun test`; se pasa antes de cada commit | Nada |
 

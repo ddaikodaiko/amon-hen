@@ -16,6 +16,7 @@
     "brief": "bun run src/cli/brief.ts",
     "record": "bun run src/cli/record.ts",
     "demo:build": "bun run src/cli/demo-build.ts",
+    "dev:db": "bun run scripts/dev-db.ts",
     "test": "bun test",
     "check": "tsc --noEmit && bun test"
   },

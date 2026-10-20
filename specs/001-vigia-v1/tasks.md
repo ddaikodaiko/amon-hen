@@ -255,20 +255,30 @@ description: "Tareas de Vigía v1, por historia de usuario"
 
   Pruebas en `tests/unit/gfw.test.ts` con un `fetch` inyectado (respuesta normal, 429 y timeout). Anotar en `research.md` el retraso medido. Necesita el token de GFW.
 - [ ] T033 [US1] [bloque] Prueba de modelos (R2): los 10 primeros candidatos de la muestra con `qwen3:8b`, `llama3.1:8b` y `granite3.3:8b`. En `research.md`, una tabla con los expedientes válidos, las llamadas a herramientas y el tiempo por caso. El ganador queda como `VIGIA_LOCAL_MODEL` por defecto en `src/config.ts` y en `contracts/cli.md`. Necesita el PC.
-- [ ] T034 [US1] [clase] Rutas de la API en `src/server/routes/candidates.ts`:
+- [x] T034 [US1] [clase] Rutas de la API en `src/server/routes/candidates.ts`:
   - `GET /api/candidates`: filtros `state`, `verdict`, `from` y `to`, 50 por página;
   - `GET /api/candidates/:id`: el candidato, sus versiones, las pruebas y la traza;
   - `POST /api/candidates/:id/reinvestigate` (✎): encola respetando el tope.
-- [ ] T035 [P] [US1] [clase] Panel:
+  **Hecho (2026-10-20):**
+  - Los tipos de las respuestas están en `src/shared/api.ts`, sin imports, y el panel los importa: un cambio en el servidor rompe la comprobación de tipos del panel.
+  - Sin filtro de estado, la lista deja fuera `detected` y `discarded`. Con `state=discarded` se ven los descartes.
+  - `reinvestigate` responde 202 con el puesto en la cola, y 409 si el estado no lo permite (`invalid_state`), si un perfil de pago no tiene key (`no_api_key`) o si el tope del mes está gastado (`over_budget`).
+  - La cola es `src/server/investigator.ts`: un trabajador en serie, en memoria, que solo existe en `live`. T062 lo usará para los casos automáticos.
+- [x] T035 [P] [US1] [clase] Panel:
   - `panel/src/lib/api.ts`: un cliente tipado de `contracts/http-api.md`;
   - `panel/src/routes/cases/+page.svelte`: la lista de casos con filtros por veredicto, estado y fecha. Los estados `pending_no_model` y `pending_budget` se ven (FR-015).
 
   Se desarrolla contra un JSON de ejemplo en `panel/src/lib/fixtures/`.
-- [ ] T036 [US1] [clase] `panel/src/routes/cases/[id]/+page.svelte` (FR-013, FR-016):
+  **Hecho (2026-10-20), con un cambio:** en vez de un JSON de ejemplo, `scripts/dev-db.ts` (`bun run dev:db`) crea una base con los rastros sintéticos de las pruebas y casos investigados por los modelos de guion, uno en cada estado. El panel se prueba contra el servidor de verdad, y la base sirve también para las vistas que vengan. SvelteKit 3 ha quitado `$lib`: se usa `#lib/….ts` (los `imports` de `panel/package.json`).
+- [x] T036 [US1] [clase] `panel/src/routes/cases/[id]/+page.svelte` (FR-013, FR-016):
   - veredicto, confianza, explicación, coste y modelo;
   - las pruebas son enlaces `#step-N` que llevan a su paso y lo resaltan (escenario 5);
   - la traza paso a paso: herramienta, entrada plegable, `output_summary`, tokens, coste y duración;
   - un selector de versiones.
+  **Hecho (2026-10-20):**
+  - El paso al que apunta una prueba se resalta a partir de `page.url.hash`, no de `:target`, para que un enlace compartido a `#step-N` también lo resalte (el paso se pinta después de cargar).
+  - El botón de reinvestigar refresca la página cada 4 s hasta que hay versión nueva o el intento acaba en espera. El SSE lo sustituirá.
+  - Comprobado en Chromium headless sobre la base de desarrollo, y de punta a punta con el PC apagado: encolar, sonda de 3 s y vuelta a `pending_no_model`.
 
 **Checkpoint**: la US1 funciona sola. Esto es el MVP: ya demuestra el trabajo con agentes.
 
