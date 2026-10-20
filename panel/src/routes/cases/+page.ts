@@ -5,6 +5,16 @@ import type { PageLoad } from "./$types";
 
 const DAY = /^\d{4}-\d\d-\d\d$/;
 
+/** The quick filters over the list, and how many alerts each one holds in the chosen dates. */
+export const PRESETS: { key: string; label: string; filters: Pick<CandidateFilters, "state" | "verdict"> }[] = [
+  { key: "all", label: "All", filters: {} },
+  { key: "dark", label: "Suspicious", filters: { verdict: "likely_dark" } },
+  { key: "unclear", label: "Unclear", filters: { verdict: "inconclusive" } },
+  { key: "range", label: "Out of range", filters: { verdict: "coverage_gap" } },
+  { key: "waiting", label: "Awaiting AI", filters: { state: ["pending", "pending_no_model", "pending_budget", "investigating", "error"] } },
+  { key: "ignored", label: "Ignored", filters: { state: ["discarded"] } },
+];
+
 /** The filters in the URL; anything the API would refuse is left out. */
 function filtersFrom(q: URLSearchParams): CandidateFilters {
   const states = (q.get("state") ?? "").split(",").filter((s): s is CandidateState => s in STATE_LABEL);
@@ -23,7 +33,12 @@ function filtersFrom(q: URLSearchParams): CandidateFilters {
 export const load: PageLoad = async ({ url, fetch }) => {
   const filters = filtersFrom(url.searchParams);
   try {
-    return { filters, list: await api.candidates(filters, fetch) };
+    const dates = { from: filters.from, to: filters.to };
+    const [list, ...totals] = await Promise.all([
+      api.candidates(filters, fetch),
+      ...PRESETS.map((p) => api.candidates({ ...dates, ...p.filters }, fetch).then((l) => l.total)),
+    ]);
+    return { filters, list, counts: Object.fromEntries(PRESETS.map((p, i) => [p.key, totals[i]!])) };
   } catch (err) {
     if (err instanceof ApiError) error(err.status, err.message);
     throw err;

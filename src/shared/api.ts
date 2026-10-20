@@ -21,10 +21,43 @@ export interface Point {
   lon: number;
 }
 
+/** A point in words: the nearest of the gulf's ports, towns and islands (src/geo/places.ts). */
+export interface Near {
+  name: string;
+  country: "FI" | "EE" | "RU";
+  km: number;
+  /** Which way the point lies from the place; null within 2 km of it. */
+  dir: "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW" | null;
+}
+
+/** What the data says about a gap without the agent (src/server/case-context.ts). */
+export interface CaseContext {
+  near_start: Near;
+  near_end: Near | null;
+  /** Straight line from where it went silent to where it came back; null while silent. */
+  moved_km: number | null;
+  /** The speed that straight line needs, in knots. */
+  implied_kn: number | null;
+  /** Its speed in its last message before the silence. */
+  speed_before_kn: number | null;
+  /** How well the receivers hear that spot at that hour, over the last 7 days, this vessel left out. */
+  coverage: { ratio: number | null; expected_min: number; enough_data: boolean } | null;
+  /** Other vessels near where it went silent, during the first hour of the silence at most. */
+  nearby: { total: number; kept_reporting: number; radius_km: number };
+  /** Its other silences in the recording, newest first, our own outages left out. */
+  other_silences: { id: number; gap_start: number; duration_min: number | null }[];
+  other_silences_total: number;
+  /** From 3 h before the gap to 2 h after it, oldest first. */
+  track: TrackPoint[];
+}
+
 export interface CandidateSummary {
   id: number;
   mmsi: number;
   name: string | null;
+  /** From the MMSI, and from its static data: "Russia", "tug". */
+  flag: string | null;
+  type_label: string | null;
   ais_class: "A" | "B";
   gap_start: number;
   /** Null while the vessel is still silent. */
@@ -34,6 +67,8 @@ export interface CandidateSummary {
   end: Point | null;
   state: CandidateState;
   discard_reason: DiscardReason | null;
+  /** Where it went silent, in words. */
+  near: Near;
   /** When it entered the queue: the trigger, a reappearance after it, or a request. */
   trigger_at: number | null;
   /** When the last attempt began. */
@@ -110,6 +145,7 @@ export interface Dossier {
 
 export interface CandidateDetail {
   candidate: CandidateSummary & { nav_status_start: number | null; created_at: number; vessel: VesselInfo };
+  context: CaseContext;
   /** Oldest version first. */
   dossiers: Dossier[];
 }
@@ -147,8 +183,18 @@ export interface StreamEvents {
   hello: { mode: Meta["mode"]; t: number; range: { start: number; end: number } | null; speed: number | null };
   /** Every second: the last position of each vessel heard from in the last 10 minutes. */
   positions: { t: number; vessels: VesselTick[] };
-  /** A gap the detector flagged, where the vessel went silent. */
-  candidate: { id: number; mmsi: number; lat: number; lon: number; gap_start: number };
+  /** A gap the detector flagged, where the vessel went silent, and who it is. */
+  candidate: {
+    id: number;
+    mmsi: number;
+    lat: number;
+    lon: number;
+    gap_start: number;
+    name: string | null;
+    flag: string | null;
+    type_label: string | null;
+    near: Near;
+  };
   /** The verdict of a case: its newest dossier. */
   dossier: { candidate_id: number; version: number; verdict: VerdictValue; confidence: Confidence };
   /** Each closed ingest minute. */
@@ -219,6 +265,8 @@ export interface LabelCase {
   vessel: VesselInfo;
   /** From 3 h before the gap to 2 h after it ends, oldest first. */
   track: TrackPoint[];
+  /** Without anything from the agent, like the rest of this view. */
+  context: CaseContext;
 }
 
 /** GET /api/label/next */

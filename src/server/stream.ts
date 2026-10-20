@@ -1,5 +1,8 @@
 import { THRESHOLDS } from "../config";
 import type { Database } from "../db";
+import { flagOf } from "../geo/mid";
+import { nearestPlace } from "../geo/places";
+import { shipTypeLabel } from "../geo/ship-type";
 import { positionsAt, type Range, ReplayClock, recordedRange, SPEEDS, type Speed } from "../replay/clock";
 import type { StreamEvents } from "../shared/api";
 import { HttpError, type Route } from "./http";
@@ -82,15 +85,19 @@ export class StreamSession {
 
   private marks(from: number, to: number): StreamEvent[] {
     const rows = this.db
-      .query<StreamEvents["candidate"], [number, number]>(
-        `SELECT c.id, c.mmsi, c.start_lat AS lat, c.start_lon AS lon, c.gap_start FROM candidates c
+      .query<{ id: number; mmsi: number; lat: number; lon: number; gap_start: number; name: string | null; ship_type: number | null }, [number, number]>(
+        `SELECT c.id, c.mmsi, c.start_lat AS lat, c.start_lon AS lon, c.gap_start, v.name, v.ship_type
+         FROM candidates c JOIN vessels v ON v.mmsi = c.mmsi
          WHERE c.state NOT IN ('detected', 'discarded') AND ${this.timing.seen} > ? AND ${this.timing.seen} <= ?
          ORDER BY c.gap_start`,
       )
       .all(from, to)
       .filter((r) => !this.sentMarks.has(r.id));
     for (const r of rows) this.sentMarks.add(r.id);
-    return rows.map((data) => ({ event: "candidate", data }));
+    return rows.map(({ ship_type, ...r }) => {
+      const data: StreamEvents["candidate"] = { ...r, flag: flagOf(r.mmsi), type_label: shipTypeLabel(ship_type), near: nearestPlace(r.lat, r.lon) };
+      return { event: "candidate", data };
+    });
   }
 
   private verdicts(from: number, to: number): StreamEvent[] {

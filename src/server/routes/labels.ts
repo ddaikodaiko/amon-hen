@@ -4,6 +4,7 @@ import type { Database } from "../../db";
 import { LABEL_VALUES, LABELABLE, labelProgress, nextToLabel } from "../../eval/labels";
 import { listReports } from "../../eval/report";
 import type * as Api from "../../shared/api";
+import { CASE_TRACK, caseContext } from "../case-context";
 import { HttpError, readJson, type Route } from "../http";
 import { vesselInfo } from "./map";
 import { parse } from "./parse";
@@ -11,9 +12,8 @@ import { parse } from "./parse";
 // Blind labelling (FR-018): the case comes without anything the agent said, and the verdict is
 // only given back once the label is saved.
 
-const HOUR = 3_600_000;
 /** How much of the track the labelling view shows around the gap. */
-export const LABEL_TRACK = { beforeMs: 3 * HOUR, afterMs: 2 * HOUR } as const;
+export const LABEL_TRACK = CASE_TRACK;
 
 interface CaseRow {
   id: number;
@@ -27,20 +27,13 @@ interface CaseRow {
   nav_status_start: number | null;
 }
 
-const round = (x: number) => Math.round(x * 1e5) / 1e5;
-
-function labelCase(db: Database, id: number): Api.LabelCase {
+async function labelCase(db: Database, id: number): Promise<Api.LabelCase> {
   const c = db
     .query<CaseRow, [number]>(
       "SELECT id, mmsi, gap_start, gap_end, start_lat, start_lon, end_lat, end_lon, nav_status_start FROM candidates WHERE id = ?",
     )
     .get(id)!;
-  const track = db
-    .query<{ ts: number; lat: number; lon: number }, [number, number, number]>(
-      "SELECT ts, lat, lon FROM positions WHERE mmsi = ? AND ts >= ? AND ts <= ? ORDER BY ts",
-    )
-    .all(c.mmsi, c.gap_start - LABEL_TRACK.beforeMs, (c.gap_end ?? c.gap_start) + LABEL_TRACK.afterMs)
-    .map((p): Api.TrackPoint => [p.ts, round(p.lat), round(p.lon)]);
+  const context = await caseContext(db, id);
   return {
     id: c.id,
     mmsi: c.mmsi,
@@ -51,16 +44,17 @@ function labelCase(db: Database, id: number): Api.LabelCase {
     end: c.end_lat === null || c.end_lon === null ? null : { lat: c.end_lat, lon: c.end_lon },
     nav_status_start: c.nav_status_start,
     vessel: vesselInfo(db, c.mmsi)!,
-    track,
+    track: context.track,
+    context,
   };
 }
 
 const next: Route = {
   method: "GET",
   path: "/api/label/next",
-  handler: ({ app }) => {
+  handler: async ({ app }) => {
     const id = nextToLabel(app.db);
-    const body: Api.LabelNext = { case: id === null ? null : labelCase(app.db, id), progress: labelProgress(app.db) };
+    const body: Api.LabelNext = { case: id === null ? null : await labelCase(app.db, id), progress: labelProgress(app.db) };
     return Response.json(body);
   },
 };

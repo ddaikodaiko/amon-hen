@@ -4,10 +4,9 @@
   import "maplibre-gl/dist/maplibre-gl.css";
   import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
   import { onMount } from "svelte";
-  import type { LabelCase } from "#lib/api.ts";
   import { BOUNDS, baseStyle, boundsOf, type Collection, emptySource, GAP_LAYERS, gapData } from "#lib/map/layers.ts";
 
-  let { gap }: { gap: LabelCase } = $props();
+  let { gap, height = 340 }: { gap: Parameters<typeof gapData>[0]; height?: number } = $props();
   let container: HTMLDivElement;
   let map = $state.raw<MapLibre | null>(null);
   let ready = $state(false);
@@ -54,18 +53,16 @@
   });
 </script>
 
-<div class="gap-map" bind:this={container}></div>
-<ul class="key muted">
-  <li><span class="swatch before"></span>before the silence</li>
-  <li><span class="swatch silence"></span>silent (straight line, not the route)</li>
-  <li><span class="swatch after"></span>after it</li>
+<div class="gap-map" style:height="{height}px" bind:this={container}></div>
+<ul class="key">
+  <li><span class="swatch before"></span>Its route before going silent</li>
+  <li><span class="swatch silence"></span>Silent (straight line: the real route is unknown)</li>
+  <li><span class="swatch after"></span>After it came back</li>
 </ul>
 
 <style>
   .gap-map {
-    height: 340px;
     border: 1px solid var(--line);
-    border-radius: 6px;
   }
 
   .key {
@@ -76,6 +73,7 @@
     padding: 0;
     list-style: none;
     font-size: 12px;
+    color: var(--text-2);
   }
 
   .swatch {

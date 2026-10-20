@@ -1,124 +1,91 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { candidatesQuery, type CandidateFilters, type CandidateState, type VerdictValue } from "#lib/api.ts";
-  import { CONFIDENCE_LABEL, DISCARD_LABEL, minutes, STATE_LABEL, usd, utc, VERDICT_LABEL } from "#lib/format.ts";
+  import { candidatesQuery, type CandidateFilters } from "#lib/api.ts";
+  import { ago, alertStatus, minutes, placeText, vesselLine, when } from "#lib/format.ts";
+  import { PRESETS } from "./+page.ts";
   import type { PageProps } from "./$types";
 
   let { data }: PageProps = $props();
   const list = $derived(data.list);
   const filters = $derived(data.filters);
 
-  // "" is "all cases": every state except the gaps the detector discarded.
-  const STATE_OPTIONS: CandidateState[] = [
-    "investigated",
-    "pending",
-    "investigating",
-    "pending_no_model",
-    "pending_budget",
-    "error",
-    "discarded",
-  ];
-
   function apply(change: Partial<CandidateFilters>) {
     void goto(`/cases${candidatesQuery({ ...filters, page: 1, ...change })}`);
   }
 
+  const same = (a: CandidateFilters["state"], b: CandidateFilters["state"]) => (a ?? []).join() === (b ?? []).join();
+  const preset = $derived(PRESETS.find((p) => p.filters.verdict === filters.verdict && same(p.filters.state, filters.state))?.key ?? null);
+
   const first = $derived((list.page - 1) * list.page_size + 1);
   const last = $derived(first + list.items.length - 1);
   const pages = $derived(Math.max(1, Math.ceil(list.total / list.page_size)));
+  const now = Date.now();
 </script>
 
-<svelte:head><title>Cases · Vigía</title></svelte:head>
+<svelte:head><title>Alerts · Vigía</title></svelte:head>
 
-<h1>Cases</h1>
+<h1>Alerts</h1>
+<p class="lede">
+  Each alert is a ship that stopped transmitting its position for 30 minutes or more (an hour for small craft). An AI
+  analyst then checks why: either the shore receivers simply could not hear it, or the ship probably switched its
+  transponder off.
+</p>
 
-<form class="filters" onsubmit={(e) => e.preventDefault()}>
-  <label>
-    Verdict
-    <select
-      value={filters.verdict ?? ""}
-      onchange={(e) => apply({ verdict: (e.currentTarget.value || undefined) as VerdictValue | undefined })}
-    >
-      <option value="">Any</option>
-      {#each Object.entries(VERDICT_LABEL) as [value, label] (value)}
-        <option {value}>{label}</option>
-      {/each}
-    </select>
-  </label>
-  <label>
-    State
-    <select
-      value={filters.state?.join(",") ?? ""}
-      onchange={(e) => {
-        const v = e.currentTarget.value;
-        apply({ state: v === "" ? undefined : (v.split(",") as CandidateState[]) });
-      }}
-    >
-      <option value="">All cases</option>
-      {#each STATE_OPTIONS as s (s)}
-        <option value={s}>{STATE_LABEL[s]}</option>
-      {/each}
-    </select>
-  </label>
-  <label>
-    From
-    <input type="date" value={filters.from ?? ""} onchange={(e) => apply({ from: e.currentTarget.value || undefined })} />
-  </label>
-  <label>
-    To
-    <input type="date" value={filters.to ?? ""} onchange={(e) => apply({ to: e.currentTarget.value || undefined })} />
-  </label>
-  {#if filters.verdict || filters.state || filters.from || filters.to}
-    <button type="button" class="link" onclick={() => goto("/cases")}>Clear</button>
-  {/if}
-</form>
+<div class="toolbar">
+  <div class="presets" role="group" aria-label="Show">
+    {#each PRESETS as p (p.key)}
+      <button
+        type="button"
+        class="preset {p.key}"
+        aria-pressed={preset === p.key}
+        onclick={() => apply({ verdict: p.filters.verdict, state: p.filters.state })}
+      >
+        {p.label} <span class="mono count">{data.counts[p.key]}</span>
+      </button>
+    {/each}
+  </div>
+  <div class="dates">
+    <label class="label">
+      From <input type="date" value={filters.from ?? ""} onchange={(e) => apply({ from: e.currentTarget.value || undefined })} />
+    </label>
+    <label class="label">
+      To <input type="date" value={filters.to ?? ""} onchange={(e) => apply({ to: e.currentTarget.value || undefined })} />
+    </label>
+    {#if filters.from || filters.to}
+      <button type="button" class="link" onclick={() => apply({ from: undefined, to: undefined })}>Any date</button>
+    {/if}
+  </div>
+</div>
 
 {#if list.items.length === 0}
-  <p class="empty">No cases match these filters.</p>
+  <p class="empty">No alerts here.</p>
 {:else}
-  <div class="table-wrap">
+  <div class="panel table-wrap">
     <table>
       <thead>
         <tr>
-          <th>Silent from (UTC)</th>
-          <th>Vessel</th>
-          <th>Class</th>
-          <th class="num">Gap</th>
-          <th>State</th>
-          <th>Verdict</th>
-          <th>Model</th>
-          <th class="num">Cost</th>
+          <th>Status</th>
+          <th>Ship</th>
+          <th>Where it went silent</th>
+          <th>When (UTC)</th>
+          <th class="num">Silent for</th>
         </tr>
       </thead>
       <tbody>
         {#each list.items as c (c.id)}
-          <tr>
-            <td><a href="/cases/{c.id}">{utc(c.gap_start)}</a></td>
+          {@const s = alertStatus(c)}
+          <tr onclick={() => goto(`/cases/${c.id}`)}>
+            <td><span class="pill sev-{s.tone}">{s.text}</span></td>
             <td>
-              <a href="/cases/{c.id}">{c.name ?? "Unnamed"}</a>
-              <span class="muted">{c.mmsi}</span>
+              <a href="/cases/{c.id}" class="name">{c.name ?? "Unnamed ship"}</a>
+              <div class="sub">{vesselLine(c)}</div>
             </td>
-            <td>{c.ais_class}</td>
-            <td class="num">{minutes(c.duration_min)}</td>
+            <td class="where">{placeText(c.near)}</td>
             <td>
-              <span class="badge state-{c.state}">{STATE_LABEL[c.state]}</span>
-              {#if c.discard_reason}<span class="muted">{DISCARD_LABEL[c.discard_reason]}</span>{/if}
+              <span class="mono">{when(c.gap_start)}</span>
+              <div class="sub">{ago(c.gap_start, now)}</div>
             </td>
-            <td>
-              {#if c.dossier}
-                <span class="badge verdict-{c.dossier.verdict}">{VERDICT_LABEL[c.dossier.verdict]}</span>
-                <span class="muted">{CONFIDENCE_LABEL[c.dossier.confidence]}</span>
-              {:else}
-                <span class="muted">—</span>
-              {/if}
-            </td>
-            <td>
-              {#if c.dossier}
-                {c.dossier.profile}{#if c.dossier.escalated}{" "}<span class="muted">escalated</span>{/if}
-                {#if c.dossier.version > 1}<span class="muted"> v{c.dossier.version}</span>{/if}
-              {/if}
-            </td>
-            <td class="num">{c.dossier ? usd(c.dossier.cost_usd) : ""}</td>
+            <td class="num" class:open={c.gap_end === null}>{minutes(c.duration_min)}</td>
           </tr>
         {/each}
       </tbody>
@@ -133,24 +100,78 @@
 {/if}
 
 <style>
-  .filters {
+  .toolbar {
     display: flex;
     flex-wrap: wrap;
     align-items: end;
+    justify-content: space-between;
     gap: 12px;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
 
-  .filters label {
+  .presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .preset {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+  }
+
+  .preset[aria-pressed="true"] {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  }
+
+  .count {
+    color: var(--muted);
+  }
+
+  .preset.dark .count {
+    color: #ff8a8b;
+  }
+
+  .dates {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 10px;
+  }
+
+  .dates label {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    font-size: 12px;
-    color: var(--muted);
   }
 
   .table-wrap {
     overflow-x: auto;
+  }
+
+  tbody tr {
+    cursor: pointer;
+  }
+
+  .name {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .sub {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .where {
+    color: var(--text-2);
+  }
+
+  .open {
+    color: #ffc766;
   }
 
   .pager {

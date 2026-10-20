@@ -4,7 +4,11 @@ import { type CandidateState, canTransition, retrigger, STATES } from "../../age
 import { VERDICTS } from "../../agent/tools/submit_verdict";
 import { PROFILE_NAMES } from "../../config";
 import type { Database } from "../../db";
+import { flagOf } from "../../geo/mid";
+import { nearestPlace } from "../../geo/places";
+import { shipTypeLabel } from "../../geo/ship-type";
 import type * as Api from "../../shared/api";
+import { caseContext } from "../case-context";
 import { HttpError, readOptionalJson, type Route } from "../http";
 import { vesselInfo } from "./map";
 import { instant, parse } from "./parse";
@@ -36,6 +40,7 @@ interface Row {
   id: number;
   mmsi: number;
   name: string | null;
+  ship_type: number | null;
   ais_class: "A" | "B";
   gap_start: number;
   gap_end: number | null;
@@ -58,7 +63,7 @@ interface Row {
 }
 
 const SELECT = `
-  SELECT c.*, v.name,
+  SELECT c.*, v.name, v.ship_type,
          d.version AS d_version, d.verdict AS d_verdict, d.confidence AS d_confidence,
          d.profile AS d_profile, d.escalated AS d_escalated, d.cost_usd AS d_cost_usd
   FROM candidates c
@@ -71,6 +76,8 @@ function summary(r: Row): Api.CandidateSummary {
     id: r.id,
     mmsi: r.mmsi,
     name: r.name,
+    flag: flagOf(r.mmsi),
+    type_label: shipTypeLabel(r.ship_type),
     ais_class: r.ais_class,
     gap_start: r.gap_start,
     gap_end: r.gap_end,
@@ -79,6 +86,7 @@ function summary(r: Row): Api.CandidateSummary {
     end: r.end_lat === null || r.end_lon === null ? null : { lat: r.end_lat, lon: r.end_lon },
     state: r.state,
     discard_reason: r.discard_reason,
+    near: nearestPlace(r.start_lat, r.start_lon),
     trigger_at: r.trigger_at,
     started_at: r.started_at,
     dossier:
@@ -130,7 +138,7 @@ type DossierRow = Omit<Api.Dossier, "escalated" | "evidence" | "steps"> & { esca
 const detail: Route = {
   method: "GET",
   path: "/api/candidates/:id",
-  handler: ({ params, app }) => {
+  handler: async ({ params, app }) => {
     const row = candidateRow(app.db, params.id);
     const vessel = vesselInfo(app.db, row.mmsi)!;
     const evidence = app.db.query<Api.Evidence, [number]>("SELECT step_idx AS step, claim FROM evidence WHERE dossier_id = ? ORDER BY rowid");
@@ -153,6 +161,7 @@ const detail: Route = {
         created_at: row.created_at,
         vessel,
       },
+      context: await caseContext(app.db, row.id),
       dossiers,
     };
     return Response.json(body);

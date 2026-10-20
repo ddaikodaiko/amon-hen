@@ -4,15 +4,11 @@ import type { Confidence, Meta, StreamEvents, VerdictValue, VesselTick } from ".
 // reconnects at the time on screen, and so does a dropped connection (EventSource would retry
 // from the start of the recording).
 
-export interface Mark {
-  id: number;
-  mmsi: number;
-  lat: number;
-  lon: number;
-  gap_start: number;
+/** A gap on the map: where and who, and the AI's verdict once there is one. */
+export type Mark = StreamEvents["candidate"] & {
   verdict: VerdictValue | null;
   confidence: Confidence | null;
-}
+};
 
 /** Gap marks older than this leave the map, as on the server. */
 const MARKS_MS = 24 * 3_600_000;

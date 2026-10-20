@@ -57,7 +57,18 @@ describe("replay stream", () => {
 
     r.to(at(130));
     const marks = of(r.session.tick(), "candidate");
-    expect(marks.find((m) => m.id === a45)).toEqual({ id: a45, mmsi: 230000101, lat: 59.7, lon: expect.any(Number), gap_start: at(100) - 30_000 });
+    expect(marks.find((m) => m.id === a45)).toEqual({
+      id: a45,
+      mmsi: 230000101,
+      lat: 59.7,
+      lon: expect.any(Number),
+      gap_start: at(100) - 30_000,
+      // Who and where, so the map can list it without asking for the case.
+      name: "TEST 230000101",
+      flag: "Finland",
+      type_label: "cargo",
+      near: { name: "Naissaar island", country: "EE", km: 26, dir: "NW" },
+    });
     expect(marks.map((m) => m.id)).not.toContain(open);
 
     // Back at 08:25: the trigger fires and the dossier is shown.

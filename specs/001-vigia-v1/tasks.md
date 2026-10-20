@@ -472,6 +472,7 @@ description: "Tareas de Vigía v1, por historia de usuario"
 **Goal**: cada mañana, un brief de las últimas 24 h: la parte determinista a su hora y la narrativa cuando haya modelo.
 
 **Independent Test**: sobre 24 h con expedientes, `bun run brief`. Los recuentos cuadran con los expedientes y los enlaces llevan a casos que existen.
+  **Avance (2026-10-20), en el portátil con datos reales:** el escenario 2 sale bien. Con la grabadora parada 10 min (11:52-12:02 UTC), `/health` muestra la caída (`disconnected`) y los 6 gaps que se solapan con ella quedan descartados como `own_outage`, ninguno como caso. El primer tic del detector sobre 19 h reales dio 858 gaps: 723 descartados (463 por la noche sin grabar, 248 en puerto, 12 saliendo de la región) y 111 casos, que esperan en `pending_no_model` con el PC apagado. **Ojo:** 40 de esos 111 son barcos "amarrados" en muelles que faltan en `ports.geojson` (Tallinn-Paljassaare, Kronstadt, el puerto de San Petersburgo): hay que cerrar T005 antes de etiquetar en serio.
 
 ### Tests for User Story 5 ⚠️
 
@@ -519,6 +520,14 @@ description: "Tareas de Vigía v1, por historia de usuario"
 - [ ] T075 [clase] Preparar el conjunto del eval (la grabación larga y las etiquetas) como descarga aparte, con `bun run record --kind eval` y la atribución de T045. No se publica sin la confirmación de Marcos.
 - [x] T076 [clase] Repasar `quickstart.md` de principio a fin y corregir lo que no cuadre.
   **Hecho (2026-10-20):** reescrito tras US2-US5. Comprobados los comandos y sus opciones, el proxy de `/api` del panel en desarrollo, las teclas del etiquetado y la velocidad por defecto. Añade `bun install` como workspace, `vigia-server.service` (escucha en 127.0.0.1, con túnel ssh), `loginctl enable-linger`, el brief, `demo:build` y las comprobaciones de US4 con `/health`. `deploy/vigia-ingest.service` ya no habla de aisstream. Los apartados 2 y 5 solo se pueden ejecutar con la Pi y el PC.
+- [x] T079 [clase] Rediseño del panel para quien no sabe nada de barcos (pedido por Marcos el 2026-10-20, al verlo con datos reales).
+  **Hecho (2026-10-20):**
+  - **Aspecto de consola:** barra superior con el estado (en vivo o replay, analista IA conectado o no, reloj UTC), etiquetas pequeñas en mayúsculas, datos en monoespaciada y color solo con significado.
+  - **Lenguaje llano:** "Suspicious", "Out of receiver range", "Unclear", "Awaiting AI"; "Alerts" en lugar de "Cases".
+  - **Contexto sin la IA** (`src/server/case-context.ts`, con las mismas consultas que las herramientas): el lugar en palabras (nomenclátor de 27 puertos, ciudades e islas en `src/geo/places.ts`), si se movió en silencio, la cobertura, los barcos de alrededor y sus otros silencios. El panel lo convierte en datos clave con su significado (`panel/src/lib/facts.ts`), sin dar veredicto, y también lo recibe `/label`, porque no lleva nada del agente.
+  - **Mapa:** panel de situación con cifras, una frase resumen y las últimas alertas; las alertas sin analizar se pintan discretas para que destaque lo sospechoso.
+  - **Alertas:** filtros rápidos con recuento. **Caso:** un informe con la frase de lo que pasó, el rastro, el veredicto con medidor de confianza y las pruebas, y el razonamiento de la IA plegado.
+  - Faltan por pasar a este estilo: `/label` (los datos clave), `/eval`, `/briefs` y `/health`, que de momento solo heredan los colores y la tipografía.
 - [ ] T077 [bloque] Reconstruir la demo con `bun run demo:build` cuando ya haya briefs e informe de eval. Comprobar que ocupa 50 MB o menos y repetir T049.
 - [ ] T078 [bloque] Demo pública en la Pi, detrás de Cloudflare Tunnel (constitución, "Restricciones técnicas"): en modo `public` (solo lectura) con los datos en vivo, o en `replay` sobre `demo/vigia-demo.sqlite`. No se publica nada sin la confirmación de Marcos.
 
