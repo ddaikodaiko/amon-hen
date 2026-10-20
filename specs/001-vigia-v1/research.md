@@ -71,6 +71,7 @@ Fecha: 2026-10-19. Cada punto sigue el formato Decisión / Por qué / Alternativ
   - **cobertura = minutos-barco con al menos un mensaje / minutos-barco estimados en la celda**.
   - Se calcula sobre una ventana móvil de 7 días y se guarda el tamaño de la muestra.
   - `get_coverage` resta la contribución del barco investigado (se recalcula al vuelo solo para él), para que su propio gap no cuente como prueba de mala cobertura.
+  - Los minutos de una caída propia no cuentan como esperados, y los silencios de más de 6 h no se interpolan (decidido en T018).
 - **Por qué:** no necesita dependencias, se explica en una frase y se puede comprobar a mano. Con el filtro de velocidad tampoco hace falta modelar el intervalo de reporte de cada clase AIS.
 - **Alternativas:**
   - H3 (`h3-js`): hexágonos más bonitos, pero una dependencia que una sola región no necesita.

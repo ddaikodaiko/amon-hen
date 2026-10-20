@@ -149,7 +149,7 @@ description: "Tareas de Vigía v1, por historia de usuario"
   | Gap en un fondeadero frente a Kotka | Sí |
   | Gap abierto de 6 h | Sí |
 - [x] T014 [P] [US1] [clase] `tests/unit/detect.test.ts` sobre T013: los candidatos y los motivos de descarte (`own_outage`, `left_region`, `berth`) son los esperados, y la investigación se dispara al reaparecer el barco o a las 6 h.
-- [ ] T015 [P] [US1] [clase] `tests/unit/coverage.test.ts`: con dos barcos en una celda y un hueco conocido, `received_min / expected_min` da el valor calculado a mano. `sample_ok` es falso con menos de 30 minutos-barco. Un barco fondeado (a menos de 3 nudos) no suma minutos esperados, y la contribución del barco investigado se puede restar (R6).
+- [x] T015 [P] [US1] [clase] `tests/unit/coverage.test.ts`: con dos barcos en una celda y un hueco conocido, `received_min / expected_min` da el valor calculado a mano. `sample_ok` es falso con menos de 30 minutos-barco. Un barco fondeado (a menos de 3 nudos) no suma minutos esperados, y la contribución del barco investigado se puede restar (R6).
 - [ ] T016 [P] [US1] [clase] `tests/unit/verdict.test.ts`: el esquema de `submit_verdict` rechaza un veredicto:
   - sin pruebas, o con más de 5;
   - con un `step` que no está en la traza;
@@ -170,13 +170,18 @@ description: "Tareas de Vigía v1, por historia de usuario"
 
 ### Implementation for User Story 1
 
-- [ ] T018 [P] [US1] [clase] `src/coverage/compute.ts` (FR-004, R6):
+- [x] T018 [P] [US1] [clase] `src/coverage/compute.ts` (FR-004, R6):
   - interpola a 1 minuto el rastro de cada barco, incluidos los minutos de los gaps;
   - solo cuenta los minutos a más de 3 nudos (R6);
   - cuenta los minutos-barco esperados y los recibidos por celda y hora UTC, en una ventana de 7 días;
   - escribe el resultado en `coverage`.
 
   Hace pasar T015.
+  **Hecho (2026-10-20).** `coverageAt(db, lat, lon, hour, {excludeMmsi})` da la celda con `ratio` y `sample_ok`, y resta al vuelo los minutos del barco investigado. Dos decisiones que R6 no decía:
+  - Los minutos dentro de una caída propia no cuentan como esperados: miden nuestra ingesta, no las antenas.
+  - Un silencio de más de 6 h no se interpola: el barco puede haber salido de la región y vuelto.
+
+  **Sobre las 2 h grabadas** (77 ms): la cobertura es del 98 % al oeste de 24° E, del 96 % entre 26° y 28° E, del 65 % entre 28° y 29° E y del 43 % al este de 29° E. Con 2 h, solo 13 celdas llegan a 30 minutos-barco. En un fondeadero la celda tiene 0 minutos esperados (los fondeados no cuentan), así que ahí pesa `neighbors_avg_ratio` (T024).
 - [x] T019 [US1] [clase] `src/detect/gaps.ts`, puro: encuentra los gaps de cada barco según el umbral de su clase. No usa `nav_status`: cuenta igual navegando que fondeado (clarificación tras el análisis).
   `src/detect/exclusions.ts`: solape con `outages`, `headingOut` y gaps que empiezan en un `berth`.
 - [x] T020 [US1] [clase] `src/detect/run.ts`: `runDetector(db, now)` crea los `candidates` en `detected` y los pasa a `discarded` con su motivo, o a `pending` cuando se dispara la investigación (al reaparecer o a las 6 h). Hace pasar T014.
