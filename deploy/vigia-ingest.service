@@ -7,6 +7,7 @@
 #
 # Expects the repo at ~/vigia. Digitraffic needs no key; Bun loads ~/vigia/.env from the working
 # directory for VIGIA_DB, if set. It keeps 30 days of positions and raw archive.
+# After 10 minutes without a connection it exits with an error, and Restart=always starts it again.
 
 [Unit]
 Description=Vigía AIS ingest

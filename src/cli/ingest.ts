@@ -67,8 +67,16 @@ try {
   log(`could not fetch static data, continuing with the stream only: ${String(err)}`);
 }
 
+/**
+ * Without a connection for this long, the process exits with an error so that systemd starts a
+ * fresh one. After a network change (the laptop moved on 2026-10-20) Bun's WebSocket kept failing
+ * to connect for hours while a new process connected at once.
+ */
+const RESTART_AFTER_MS = 10 * 60_000;
+
 let stopping = false;
 let connected = false;
+let disconnectedSince: number | null = Date.now();
 let minutePositions = 0;
 let minuteMetadata = 0;
 let minuteVessels = new Set<number>();
@@ -95,12 +103,14 @@ const stream = connectStream({
       }
       case "open":
         connected = true;
+        disconnectedSince = null;
         archive.write({ t: Date.now(), ev: "open", detail: ev.extensions || undefined });
         applyEvent(db, { kind: "open", ts: Date.now() });
         log(`connected, extensions: ${ev.extensions || "none"}`);
         break;
       case "close":
         connected = false;
+        disconnectedSince ??= Date.now();
         archive.write({ t: Date.now(), ev: "close", detail: `${ev.code} ${ev.reason}`.trim() });
         applyEvent(db, { kind: "close", ts: Date.now() });
         log(`closed: ${ev.code} ${ev.reason}`);
@@ -137,9 +147,12 @@ const reportTimer = setInterval(() => {
   minutePositions = 0;
   minuteMetadata = 0;
   minuteVessels = new Set();
+  if (disconnectedSince !== null && Date.now() - disconnectedSince >= RESTART_AFTER_MS) {
+    void shutdown(`no connection for ${RESTART_AFTER_MS / 60_000} min, exiting for a fresh start`, 1);
+  }
 }, 60_000);
 
-async function shutdown(signal: string): Promise<void> {
+async function shutdown(signal: string, exitCode = 0): Promise<void> {
   if (stopping) return;
   stopping = true;
   clearInterval(flushTimer);
@@ -152,7 +165,7 @@ async function shutdown(signal: string): Promise<void> {
   await archive.close();
   db.close();
   log(`stopped (${signal})`);
-  process.exit(0);
+  process.exit(exitCode);
 }
 
 process.on("SIGINT", () => void shutdown("SIGINT"));

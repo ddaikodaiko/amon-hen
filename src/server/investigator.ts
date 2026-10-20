@@ -1,5 +1,6 @@
 import { investigate } from "../agent/investigate";
 import { AnthropicClient, type ModelClient } from "../agent/model";
+import { transition } from "../agent/queue";
 import { type Config, PROFILE_NAMES, type Profile, type ProfileName } from "../config";
 import type { Database } from "../db";
 
@@ -63,6 +64,10 @@ export class SerialInvestigator implements Investigator {
         });
       } catch (err) {
         console.error(`investigation of candidate ${job.id} failed`, err);
+        // Never left marked as running: as an error it can be asked for again from the panel.
+        try {
+          transition(this.db, job.id, "error", this.now());
+        } catch {}
       }
     }
     this.running = null;

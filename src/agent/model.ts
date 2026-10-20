@@ -50,13 +50,16 @@ export class AnthropicClient implements ModelClient {
     }
   }
 
-  create(params: ModelParams): Promise<Anthropic.Message> {
+  async create(params: ModelParams): Promise<Anthropic.Message> {
     // Ollama only takes thinking enabled or disabled, and an 8B model thinking out loud fills its
     // context; the 5.5 models think adaptively when `thinking` is left out.
     const thinking: Pick<Anthropic.MessageCreateParamsNonStreaming, "thinking"> = this.p.paid
       ? {}
       : { thinking: { type: "disabled" } };
-    return this.client.messages.create({ ...thinking, ...params, model: this.model });
+    const m = await this.client.messages.create({ ...thinking, ...params, model: this.model });
+    // Ollama sometimes answers with no content at all (qwen3:8b, 2026-10-20): the loop takes it
+    // as a reply without a tool call, which gets the nudge.
+    return m.content == null ? { ...m, content: [] } : m;
   }
 }
 

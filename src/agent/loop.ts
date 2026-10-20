@@ -138,7 +138,7 @@ export async function runLoop(cfg: LoopConfig): Promise<{ end: LoopEnd; steps: T
       cost_usd: cost,
       duration_ms: Math.round(performance.now() - t0),
     });
-    messages.push({ role: "assistant", content: response.content });
+    if (response.content.length > 0) messages.push({ role: "assistant", content: response.content });
 
     if (response.stop_reason === "refusal") return { end: { kind: "failed", reason: "the model refused" }, steps };
     const uses = response.content.filter((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
