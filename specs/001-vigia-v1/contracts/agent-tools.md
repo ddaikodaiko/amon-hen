@@ -2,6 +2,8 @@
 
 Es el contrato más importante del proyecto. El modelo solo ve estas herramientas, y cada llamada queda en `trace_steps`. Los nombres, las descripciones y las salidas van en inglés (FR-030). Las entradas se validan con zod antes de ejecutar nada. Si una entrada no valida, la herramienta devuelve `is_error: true` con el motivo y el intento cuenta como paso.
 
+Cada herramienta devuelve también un `summary` de una frase en inglés, que es el `output_summary` de su paso en la traza. Las restricciones que el modo `strict` no admite (`minLength`, `maximum`, `minItems`, `default`…) no se mandan en los perfiles de Anthropic; zod las comprueba igual.
+
 **Límites por investigación:**
 - 10 llamadas a herramientas como mucho;
 - 1 aviso si el modelo termina sin `submit_verdict`;
@@ -11,11 +13,11 @@ Es el contrato más importante del proyecto. El modelo solo ve estas herramienta
 
 | Herramienta | Entrada | Salida (resumen) | Fuente |
 |---|---|---|---|
-| `get_track` | `mmsi`, `from`, `to` (ISO 8601, ventana de 6 h como mucho) | Hasta 120 puntos `{t, lat, lon, sog, cog, nav_status}` + un resumen: velocidad media, rumbo dominante y distancia recorrida + `identity_conflicts`: posiciones seguidas que implican más de 50 nudos (posible MMSI duplicado o suplantado) | `positions` |
-| `get_coverage` | `lat`, `lon`, `hour_utc` | `{cell_id, ratio, expected_min, sample_ok, neighbors_avg_ratio}`, sin la contribución del barco investigado (R6) | `coverage` |
-| `get_vessel` | `mmsi` | `{name, type_label, flag, class, length_m, destination, last_static_at}` o `unknown` | `vessels` |
-| `get_nearby` | `lat`, `lon`, `at` (ISO), `radius_nm` (1-20, por defecto 10), `window_min` (por defecto 30) | `{vessels: [{mmsi, name, distance_nm, kept_reporting: boolean}], silent_count, reporting_count, jumping_count}`. `jumping_count`: vecinos con saltos de posición imposibles en la ventana (interferencia GNSS) | `positions` |
-| `get_ingest_health` | `from`, `to` | `{outages: [{start, end}], min_msg_per_min}` | `ingest_minutes` y `outages` |
+| `get_track` | `mmsi`, `from`, `to` (ISO 8601, ventana de 6 h como mucho; sin zona, UTC) | Hasta 120 puntos `{t, lat, lon, sog, cog, nav_status}` (siempre con los dos extremos de cada silencio) + un resumen: velocidad media, rumbo dominante y distancia recorrida + `silences` de 5 min o más + `identity_conflicts`: posiciones seguidas que implican más de 50 nudos (posible MMSI duplicado o suplantado) | `positions` |
+| `get_coverage` | `lat`, `lon`, `hour_utc` | `{cell_id, ratio, expected_min, sample_ok, neighbors_avg_ratio, neighbors_expected_min, neighbors_sample_ok}`, sin la contribución del barco investigado ni en la celda ni en las vecinas (R6). `neighbors_avg_ratio` junta los minutos de las 8 vecinas | `coverage` |
+| `get_vessel` | `mmsi` | `{name, type_label, flag, class, imo, callsign, length_m, destination, last_static_at}` o `{unknown, flag}` | `vessels` |
+| `get_nearby` | `lat`, `lon`, `at` (ISO), `radius_nm` (1-20, por defecto 10), `window_min` (5-360, por defecto 30) | `{vessels: [{mmsi, name, distance_nm, kept_reporting: boolean}], listed, silent_count, reporting_count, jumping_count}`, con 30 barcos como mucho en la lista. `kept_reporting`: sin silencios de 10 min o más en la ventana, que no pasa de los datos más recientes. `jumping_count`: vecinos con saltos de posición imposibles en la ventana (interferencia GNSS) | `positions` |
+| `get_ingest_health` | `from`, `to` (48 h como mucho) | `{outages: [{start, end, cause}], min_msg_per_min, minutes_known}` | `ingest_minutes` y `outages` |
 | `get_gfw_events` | `mmsi`, `from`, `to` | `{events: [{type: gap\|encounter\|loitering, start, end, lat, lon}]}` o `{unavailable: reason}` | API de GFW v3 |
 | `submit_verdict` | ver abajo | Termina la investigación | — |
 

@@ -1,12 +1,17 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
+import { getCoverage } from "./get_coverage";
+import { getIngestHealth } from "./get_ingest_health";
+import { getNearby } from "./get_nearby";
+import { getTrack } from "./get_track";
+import { getVessel } from "./get_vessel";
 import { submitVerdict } from "./submit_verdict";
 import { type AgentTool, type Investigation, ToolError } from "./tool";
 
 // The tools the model can call, by name. Each input is checked with its zod schema; the JSON
 // schema the model sees comes from the same zod schema.
 
-export const TOOLS: readonly AgentTool[] = [submitVerdict];
+export const TOOLS: readonly AgentTool[] = [getTrack, getVessel, getCoverage, getNearby, getIngestHealth, submitVerdict];
 const BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
 
 // Strict tool use does not take these; zod still checks them here (shared/tool-use-concepts.md).
@@ -20,6 +25,7 @@ const NOT_IN_STRICT = new Set([
   "maxLength",
   "minItems",
   "maxItems",
+  "default",
 ]);
 
 type Json = Record<string, unknown>;

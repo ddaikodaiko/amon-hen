@@ -202,10 +202,11 @@ description: "Tareas de Vigía v1, por historia de usuario"
   - `record(db, cost)`.
 
   Pruebas en `tests/unit/budget.test.ts`: un tope de 0 bloquea todo lo de pago, y el perfil local nunca se bloquea.
-- [ ] T023 [P] [US1] [clase] Herramientas sobre SQLite en `src/agent/tools/`: `get_track.ts`, `get_vessel.ts` (tipo legible a partir del código AIS y bandera a partir del MID) y `get_ingest_health.ts`. Cada una tiene su esquema zod de entrada, su `description` en inglés y una salida con un `summary` en tono de analista (`contracts/agent-tools.md`). `get_track` marca los `identity_conflicts` (posiciones seguidas a más de 50 nudos implícitos). Pruebas en `tests/unit/tools.test.ts`, entre ellas un salto de 40 nm en 5 min.
-- [ ] T024 [P] [US1] [clase] Dos herramientas más:
+- [x] T023 [P] [US1] [clase] Herramientas sobre SQLite en `src/agent/tools/`: `get_track.ts`, `get_vessel.ts` (tipo legible a partir del código AIS y bandera a partir del MID) y `get_ingest_health.ts`. Cada una tiene su esquema zod de entrada, su `description` en inglés y una salida con un `summary` en tono de analista (`contracts/agent-tools.md`). `get_track` marca los `identity_conflicts` (posiciones seguidas a más de 50 nudos implícitos). Pruebas en `tests/unit/tools.test.ts`, entre ellas un salto de 40 nm en 5 min.
+- [x] T024 [P] [US1] [clase] Dos herramientas más:
   - `src/agent/tools/get_coverage.ts`: la celda, su `ratio`, `sample_ok` y la media de las celdas vecinas, restando la contribución del barco investigado (R6);
   - `src/agent/tools/get_nearby.ts`: los barcos a menos de `radius_nm`, en `±window_min` de `at`, si siguieron emitiendo durante el gap, cuántos saltan de posición (`jumping_count`, interferencia GNSS) y los recuentos.
+  **Hecho (2026-10-20).** Probadas a mano sobre tres candidatos reales (milisegundos cada una). Separan bien los casos: KAVKAZ V, fondeado frente a San Petersburgo, tiene 2 posiciones en hora y media y 16 de sus 18 vecinos también callan (hueco de cobertura); DOBRYNYA, un remolcador de 15 m parado en mitad del golfo, calla 31 min mientras 25 de sus 26 vecinos siguen emitiendo. Con 2 h de datos, `get_coverage` aún no tiene muestra en casi ninguna celda.
 - [x] T025 [US1] [clase] `src/agent/tools/submit_verdict.ts`: el esquema zod de `contracts/agent-tools.md`. Comprueba cada `step` contra la traza en curso y hace pasar T016.
   `src/agent/tools/index.ts`: el registro de nombre → esquema zod.
   - El `input_schema` sale de `z.toJSONSchema`.

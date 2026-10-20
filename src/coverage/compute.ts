@@ -133,28 +133,43 @@ export function coverageAt(
   hourUtc: number,
   opts: CoverageOptions & { excludeMmsi?: number } = {},
 ): CellCoverage | null {
+  return coverageAround(db, lat, lon, hourUtc, opts)?.cell ?? null;
+}
+
+/** The cell, as in coverageAt, and the up to 8 cells around it. */
+export function coverageAround(
+  db: Database,
+  lat: number,
+  lon: number,
+  hourUtc: number,
+  opts: CoverageOptions & { excludeMmsi?: number } = {},
+): { cell: CellCoverage; neighbors: CellCoverage[]; window: { start: number; end: number } | null } | null {
   const grid = opts.grid ?? DEFAULT_GRID;
   const cell = grid.cellId(lat, lon);
   if (cell === null) return null;
-  const row = db
-    .query<Tally & { window_start: number; window_end: number }, [number, number]>(
-      `SELECT expected_min AS expected, received_min AS received, window_start, window_end
-       FROM coverage WHERE cell_id = ? AND hour_utc = ?`,
-    )
-    .get(cell, hourUtc);
-  let expected = row?.expected ?? 0;
-  let received = row?.received ?? 0;
-  if (row !== null && opts.excludeMmsi !== undefined) {
-    const own = windowTallies(db, row.window_start, row.window_end, grid, opts.excludeMmsi).get(cell * 24 + hourUtc);
-    expected -= own?.expected ?? 0;
-    received -= own?.received ?? 0;
-  }
-  return {
-    cell_id: cell,
-    hour_utc: hourUtc,
-    expected_min: expected,
-    received_min: received,
-    ratio: expected > 0 ? received / expected : null,
-    sample_ok: expected >= SAMPLE_MIN,
+  const window = db
+    .query<{ start: number; end: number }, []>("SELECT window_start AS start, window_end AS end FROM coverage LIMIT 1")
+    .get();
+  const own =
+    window !== null && opts.excludeMmsi !== undefined
+      ? windowTallies(db, window.start, window.end, grid, opts.excludeMmsi)
+      : new Map<number, Tally>();
+  const row = db.query<Tally, [number, number]>(
+    "SELECT expected_min AS expected, received_min AS received FROM coverage WHERE cell_id = ? AND hour_utc = ?",
+  );
+  const at = (id: number): CellCoverage => {
+    const t = row.get(id, hourUtc);
+    const mine = own.get(id * 24 + hourUtc);
+    const expected = (t?.expected ?? 0) - (mine?.expected ?? 0);
+    const received = (t?.received ?? 0) - (mine?.received ?? 0);
+    return {
+      cell_id: id,
+      hour_utc: hourUtc,
+      expected_min: expected,
+      received_min: received,
+      ratio: expected > 0 ? received / expected : null,
+      sample_ok: expected >= SAMPLE_MIN,
+    };
   };
+  return { cell: at(cell), neighbors: grid.neighbors(cell).map(at), window };
 }
