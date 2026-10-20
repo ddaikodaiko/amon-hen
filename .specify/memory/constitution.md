@@ -1,6 +1,10 @@
 <!--
 Informe de sincronización
-- Versión: 1.1.0 → 1.2.0 (MINOR: cambian la región y la fuente de datos)
+- Versión: 1.2.0 → 1.3.0 (MINOR: cambia dónde va la demo pública)
+- Restricciones técnicas: la demo pública sale de la Pi y va a un VPS que Marcos tendrá más
+  adelante para las demos de sus proyectos; la Pi queda para su portfolio y para la grabadora,
+  sin exponerla. Plantillas sin cambios.
+- 1.2.0: 1.1.0 → 1.2.0 (MINOR: cambian la región y la fuente de datos)
 - Restricciones técnicas: región Estrecho de Gibraltar → golfo de Finlandia; ingesta aisstream →
   Digitraffic (MQTT, CC BY 4.0). Motivo: la cobertura medida (specs/001-vigia-v1/research.md, R7).
 - Principios IV y VI: nombran la nueva fuente. Plantillas sin cambios.
@@ -68,7 +72,7 @@ Informe de sincronización
 - **Región única:** el golfo de Finlandia. El Estrecho de Gibraltar se descartó por falta de cobertura gratuita (research R7). Más regiones es v2.
 - **Detección:** reglas deterministas generan los candidatos; el agente investiga, no detecta.
 - **Ingesta:** Digitraffic por MQTT, siempre desde el backend, que es quien archiva los datos y mide la salud. La salud de la ingesta MUST registrarse, y los gaps que coinciden con caídas propias se descartan.
-- **Despliegue:** la ingesta, el panel y la demo pública van en la Pi 5 (24/7, con Cloudflare Tunnel). El modelo va en el PC de casa, que solo está encendido a ratos y se alcanza por Tailscale. Mientras está apagado, los candidatos esperan en cola sin perderse.
+- **Despliegue:** la ingesta y el panel en vivo van en la Pi 5 (24/7), sin exponerlos: se entra por Tailscale. La Pi aloja también el portfolio de Marcos. La demo pública va en un VPS barato, el que Marcos usará para las demos de todos sus proyectos, en `replay` sobre `demo/vigia-demo.sqlite`. El modelo va en el PC de casa, que solo está encendido a ratos y se alcanza por Tailscale. Mientras está apagado, los candidatos esperan en cola sin perderse.
 - **Secretos:** solo en variables de entorno (`.env` fuera del repo), nunca en el código.
 
 ## Flujo de trabajo
@@ -86,4 +90,4 @@ Informe de sincronización
   - MINOR si se añade uno;
   - PATCH si solo cambia la redacción.
 
-**Versión**: 1.2.0 | **Ratificada**: 2026-10-19 | **Última modificación**: 2026-10-19
+**Versión**: 1.3.0 | **Ratificada**: 2026-10-19 | **Última modificación**: 2026-10-20

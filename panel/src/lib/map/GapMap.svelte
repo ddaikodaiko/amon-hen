@@ -22,6 +22,8 @@
       }),
     );
     m.on("load", () => {
+      // Compact attribution starts open and would cover the bottom of a small map: folded behind its "i".
+      container.querySelector(".maplibregl-ctrl-attrib")?.classList.remove("maplibregl-compact-show");
       m.addSource("gap", emptySource());
       for (const layer of GAP_LAYERS) m.addLayer(layer);
       fetch("/api/land")

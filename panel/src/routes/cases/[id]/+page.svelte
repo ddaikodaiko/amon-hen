@@ -21,6 +21,8 @@
     vesselLine,
     when,
   } from "#lib/format.ts";
+  import Facts from "#lib/case/Facts.svelte";
+  import Timeline from "#lib/case/Timeline.svelte";
   import GapMap from "#lib/map/GapMap.svelte";
   import type { PageProps } from "./$types";
 
@@ -152,21 +154,7 @@
       <a class="label" href={mapLink}>Open on the map →</a>
     </div>
     <GapMap gap={{ ...c, track: x.track }} height={360} />
-    <ol class="timeline">
-      <li>
-        <span class="label">Last message</span>
-        <span class="mono">{utc(c.gap_start)}</span>
-      </li>
-      <li class="silent">
-        <span class="label">Silent for</span>
-        <span class="mono">{c.gap_end === null ? `${ago(c.gap_start)}, ongoing` : minutes(c.duration_min)}</span>
-      </li>
-      <li>
-        <span class="label">Back on air</span>
-        <span class="mono">{c.gap_end === null ? "—" : utc(c.gap_end)}</span>
-        {#if x.near_end}<span class="muted">{placeText(x.near_end)}</span>{/if}
-      </li>
-    </ol>
+    <Timeline {...c} near_end={x.near_end} />
   </section>
 
   <section class="panel ai">
@@ -230,19 +218,7 @@
 
 <section class="block">
   <h2 class="label">What the data says</h2>
-  <dl class="facts">
-    {#each facts as f (f.label)}
-      <div class="fact {f.tone}">
-        <dt class="label">{f.label}</dt>
-        <dd class="value">{f.value}</dd>
-        <dd class="note">{f.note}</dd>
-      </div>
-    {/each}
-  </dl>
-  <p class="small muted legend">
-    <span class="tick notable"></span>points to the ship going quiet itself
-    <span class="tick calm"></span>points to a reception problem
-  </p>
+  <Facts {facts} />
 </section>
 
 {#if x.other_silences.length > 0}
@@ -357,30 +333,9 @@
     color: var(--accent);
   }
 
-  .timeline {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    border-top: 1px solid var(--line);
-  }
 
-  .timeline li {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 10px 12px;
-    font-size: 13px;
-  }
 
-  .timeline li + li {
-    border-left: 1px solid var(--line);
-  }
 
-  .timeline .silent .mono {
-    color: #ffc766;
-  }
 
   .ai .verdict {
     margin: 0 0 8px;
@@ -489,29 +444,9 @@
     margin-bottom: 10px;
   }
 
-  .legend {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    margin: 8px 0 0;
-  }
 
-  .tick {
-    display: inline-block;
-    width: 3px;
-    height: 12px;
-    margin-left: 10px;
-  }
 
-  .tick.notable {
-    background: var(--danger);
-    margin-left: 0;
-  }
 
-  .tick.calm {
-    background: var(--range);
-  }
 
   .others {
     display: flex;
