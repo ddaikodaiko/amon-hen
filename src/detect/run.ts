@@ -123,6 +123,6 @@ export function runDetector(db: Database, now: number, opts: DetectorOptions = {
     }
 
     setMeta(db, SCANNED_UNTIL, String(Math.max(scanned, horizon)));
-  })();
+  }).immediate();
   return run;
 }

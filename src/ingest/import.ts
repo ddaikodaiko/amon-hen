@@ -82,7 +82,7 @@ export function importArchive(
           applyEvent(db, { kind: line.ev, ts: line.t });
         }
       }
-    })();
+    }).immediate();
     stats.files++;
     onFile?.(path, stats);
   }

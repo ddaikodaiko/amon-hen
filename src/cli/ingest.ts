@@ -61,7 +61,7 @@ try {
       const msg = parseMessage(m.topic, m.data, t);
       if (msg !== null) applyMessage(db, msg);
     }
-  })();
+  }).immediate();
   log(`static data for ${metadata.length} vessels`);
 } catch (err) {
   log(`could not fetch static data, continuing with the stream only: ${String(err)}`);

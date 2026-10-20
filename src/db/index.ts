@@ -43,7 +43,7 @@ export function migrate(db: Database): void {
     db.transaction(() => {
       db.run(MIGRATIONS[v]!);
       db.run(`PRAGMA user_version = ${v + 1}`);
-    })();
+    }).immediate();
   }
 }
 

@@ -151,6 +151,8 @@ export async function investigate(db: Database, candidateId: number, deps: Inves
   }
 
   const escalated = client !== deps.primary;
+  // Immediate: it reads before it writes, and the recorder writes to the same file from another
+  // process; a deferred one fails with SQLITE_BUSY_SNAPSHOT instead of waiting (2026-10-20).
   const dossierId = db.transaction(() => {
     const version =
       (db.query<{ v: number | null }, [number]>("SELECT max(version) AS v FROM dossiers WHERE candidate_id = ?").get(c.id)?.v ?? 0) + 1;
@@ -187,6 +189,6 @@ export async function investigate(db: Database, candidateId: number, deps: Inves
     for (const e of verdict.evidence) evidence.run(id, e.step, e.claim);
     transition(db, c.id, "investigated", now());
     return id;
-  })();
+  }).immediate();
   return { state: "investigated", dossierId, verdict, escalated };
 }

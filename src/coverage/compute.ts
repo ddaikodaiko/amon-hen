@@ -107,7 +107,7 @@ export function computeCoverage(db: Database, windowEnd: number, opts: CoverageO
   db.transaction(() => {
     db.run("DELETE FROM coverage");
     for (const [k, t] of tallies) insert.run(Math.floor(k / 24), k % 24, t.expected, t.received, from, windowEnd);
-  })();
+  }).immediate();
   return { cells: tallies.size };
 }
 

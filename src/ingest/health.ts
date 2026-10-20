@@ -98,5 +98,5 @@ export function closeMinutes(db: Database, now: number): void {
     setMeta(db, CLOSED_UNTIL, String(current));
     if (downSince === null) db.query("DELETE FROM meta WHERE key = ?").run(DOWN_SINCE);
     else setMeta(db, DOWN_SINCE, String(downSince));
-  })();
+  }).immediate();
 }
