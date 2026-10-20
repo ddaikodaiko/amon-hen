@@ -7,7 +7,7 @@ import { type Database, getMeta, setMeta } from "../db";
 const MIN = 60_000;
 const floorMin = (ts: number) => Math.floor(ts / MIN) * MIN;
 
-const CLOSED_UNTIL = "health_closed_until";
+export const CLOSED_UNTIL = "health_closed_until";
 const DOWN_SINCE = "health_down_since";
 
 export interface ConnectionEvent {

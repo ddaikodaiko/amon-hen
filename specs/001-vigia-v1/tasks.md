@@ -293,7 +293,7 @@ description: "Tareas de Vigía v1, por historia de usuario"
 ### Tests for User Story 2 ⚠️
 
 - [x] T037 [P] [US2] [clase] `tests/unit/replay-clock.test.ts`: a 60×, un minuto de datos pasa en 1 s, y cambiar de velocidad no hace saltar el reloj.
-- [ ] T038 [P] [US2] [clase] `tests/integration/record.test.ts`: `record --kind demo` sobre las fixtures deja una posición por barco y minuto, y conserva los candidatos, los expedientes y las trazas de la ventana.
+- [x] T038 [P] [US2] [clase] `tests/integration/record.test.ts`: `record --kind demo` sobre las fixtures deja una posición por barco y minuto, y conserva los candidatos, los expedientes y las trazas de la ventana.
 
 ### Implementation for User Story 2
 
@@ -325,14 +325,21 @@ description: "Tareas de Vigía v1, por historia de usuario"
   **Hecho (2026-10-20):** `/api/meta` dice ahora si el modelo responde. En `live`, el servidor prueba Ollama cada 2 min (`src/server/model-status.ts`, que T062 usará para el trabajador). También dice si hay `ANTHROPIC_API_KEY` (`paid_ready`), solo en `live`. El expediente explica por qué el botón está desactivado: demo, vista pública, gap descartado, modelo sin respuesta (con el motivo), sin key o tope gastado. Los perfiles de pago se desactivan si no hay key. Comprobado en replay y en live con el PC apagado.
 - [x] T045 [US2] [clase] Atribución de Digitraffic ("Source: Fintraffic / digitraffic.fi, CC BY 4.0") y de OSM (ODbL) en el pie del panel y en `data/README.md`. Con CC BY 4.0, la demo y el set del eval se pueden publicar.
   **Hecho (2026-10-20):** `data/README.md` (en inglés) dice de dónde sale cada archivo y con qué licencia. El pie del panel y el control de atribución del mapa nombran Digitraffic y OSM. `ports.geojson` y `land.geojson` son bases derivadas de OSM, así que también van con la ODbL.
-- [ ] T046 [US2] [clase] `src/cli/record.ts`: `bun run record --from --to --kind demo|eval --out`. Copia la ventana a una base aparte con sus candidatos, expedientes y trazas. Con `--kind demo`, reduce a una posición por barco y minuto. Registra la fila en `recordings`. Hace pasar T038.
+- [x] T046 [US2] [clase] `src/cli/record.ts`: `bun run record --from --to --kind demo|eval --out`. Copia la ventana a una base aparte con sus candidatos, expedientes y trazas. Con `--kind demo`, reduce a una posición por barco y minuto. Registra la fila en `recordings`. Hace pasar T038.
+  **Hecho (2026-10-20):**
+  - Copia con `ATTACH` e `INSERT … SELECT`, conservando los ids. Lleva la cobertura entera (el agregado de 7 días que vio el agente), los minutos de salud y las caídas de la ventana. Las etiquetas solo van en `--kind eval`.
+  - Deja `detect_scanned_until` y `health_closed_until` al final de la ventana, y el archivo en modo `DELETE` (uno solo, que se abre en solo lectura).
+  - La fila de `recordings` va en las dos bases.
+  - Sobre 3 h reales: 23.168 posiciones de 435 barcos, 2,3 MB, en 0,3 s.
+  - Ojo: al quedarse con una posición por minuto, en la demo un gap puede empezar hasta 30 s antes. Si se le pasara el detector, los vería como nuevos. No importa porque la demo solo se reproduce, pero el set del eval guarda todas las posiciones.
 - [ ] T047 [US2] [bloque] `src/cli/demo-build.ts` (`bun run demo:build --from --to`), en tres pasos:
   1. investiga en la base principal los candidatos de la ventana que aún no tienen expediente;
   2. hace `record --kind demo` de 24 h;
   3. copia los briefs y el informe de eval que ya existan.
 
   Sale en `demo/vigia-demo.sqlite` y falla si pasa de 50 MB. Investiga antes de reducir para que el agente vea los datos completos (así está en `contracts/cli.md`). Necesita el PC.
-- [ ] T048 [US2] [clase] `src/cli/demo.ts` (`bun run demo`): compila el panel si no existe `panel/build`, abre `demo/vigia-demo.sqlite` en solo lectura y arranca el servidor en modo `replay` en el puerto 4250. No necesita `.env` ni red.
+- [x] T048 [US2] [clase] `src/cli/demo.ts` (`bun run demo`): compila el panel si no existe `panel/build`, abre `demo/vigia-demo.sqlite` en solo lectura y arranca el servidor en modo `replay` en el puerto 4250. No necesita `.env` ni red.
+  **Hecho (2026-10-20):** no lee `.env`: el modo y la base van fijos. Abre la base con `openReadOnly`, que comprueba la versión del esquema. `--db` sirve para probar con otra base. `src/server/serve.ts` arranca `Bun.serve` igual para `server` y `demo`. Comprobado con `unshare -rn` (sin red) sobre una copia de 3 h con permisos 444: la API, el SSE y el panel responden, reinvestigar da 403 y no sale nada a la red. El T049 completo espera a la demo de verdad (T047).
 - [ ] T049 [US2] [clase] Validar SC-001: un clon limpio en una carpeta nueva, sin `.env` y sin red (`unshare -rn`), `bun install` ya hecho con red, y `bun run demo`. Cronometrar hasta abrir un expediente.
 
 **Checkpoint**: la demo funciona con lo que haya calculado. El brief y el eval salen vacíos hasta que existan (T077).

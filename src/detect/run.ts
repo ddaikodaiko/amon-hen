@@ -15,7 +15,7 @@ import { type Fix, findGaps, type Gap, thresholdFor } from "./gaps";
 // that overlap it are discarded instead of becoming candidates.
 
 const DEFAULT_PORTS = loadPorts(portsJson);
-const SCANNED_UNTIL = "detect_scanned_until";
+export const SCANNED_UNTIL = "detect_scanned_until";
 
 export interface DetectorOptions {
   ports?: Port[];

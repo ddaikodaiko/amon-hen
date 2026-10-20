@@ -25,6 +25,17 @@ export function openDb(path: string): Database {
   return db;
 }
 
+/** Opens a shipped database (the demo) without writing to it; it must have this code's schema. */
+export function openReadOnly(path: string): Database {
+  const db = new Database(path, { readonly: true, strict: true });
+  const version = db.query<{ user_version: number }, []>("PRAGMA user_version").get()?.user_version ?? 0;
+  if (version !== SCHEMA_VERSION) {
+    db.close();
+    throw new Error(`${path} has schema version ${version}, this code expects ${SCHEMA_VERSION}: rebuild it`);
+  }
+  return db;
+}
+
 export function migrate(db: Database): void {
   const current = db.query<{ user_version: number }, []>("PRAGMA user_version").get()?.user_version ?? 0;
   for (let v = current; v < MIGRATIONS.length; v++) {
