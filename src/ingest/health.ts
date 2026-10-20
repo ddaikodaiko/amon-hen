@@ -21,6 +21,12 @@ interface MinuteRow {
   msg_count: number;
 }
 
+/** Every minute before this one is closed: its health is known. Null before the first close. */
+export function healthClosedUntil(db: Database): number | null {
+  const v = getMeta(db, CLOSED_UNTIL);
+  return v === null ? null : Number(v);
+}
+
 export function countMessage(db: Database, ts: number): void {
   db.query(
     `INSERT INTO ingest_minutes (minute_ts, connected, msg_count) VALUES (?, 1, 1)

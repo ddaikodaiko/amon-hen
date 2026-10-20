@@ -9,12 +9,12 @@ export interface Port {
   polygons: PolygonCoords[];
 }
 
-interface Feature {
+export interface PortFeature {
   properties: { name?: string } | null;
   geometry: { type: "Polygon"; coordinates: PolygonCoords } | { type: "MultiPolygon"; coordinates: PolygonCoords[] };
 }
 
-export function loadPorts(geojson: { features: Feature[] }): Port[] {
+export function loadPorts(geojson: { features: PortFeature[] }): Port[] {
   return geojson.features.map((f) => ({
     name: f.properties?.name ?? "unnamed",
     polygons: f.geometry.type === "Polygon" ? [f.geometry.coordinates] : f.geometry.coordinates,

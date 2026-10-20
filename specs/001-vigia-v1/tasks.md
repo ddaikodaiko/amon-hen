@@ -135,7 +135,7 @@ description: "Tareas de Vigía v1, por historia de usuario"
 
 > Se escriben primero y deben fallar antes de implementar.
 
-- [ ] T013 [P] [US1] [clase] Fixtures sintéticas en `tests/fixtures/ais/gaps.ts`: un generador de rastros (un barco en línea recta a 12 nudos) con estos gaps conocidos:
+- [x] T013 [P] [US1] [clase] Fixtures sintéticas en `tests/fixtures/ais/gaps.ts`: un generador de rastros (un barco en línea recta a 12 nudos) con estos gaps conocidos:
 
   | Caso | ¿Candidato? |
   |---|---|
@@ -148,7 +148,7 @@ description: "Tareas de Vigía v1, por historia de usuario"
   | Gap que empieza en el puerto de Vuosaari | No (`berth`) |
   | Gap en un fondeadero frente a Kotka | Sí |
   | Gap abierto de 6 h | Sí |
-- [ ] T014 [P] [US1] [clase] `tests/unit/detect.test.ts` sobre T013: los candidatos y los motivos de descarte (`own_outage`, `left_region`, `berth`) son los esperados, y la investigación se dispara al reaparecer el barco o a las 6 h.
+- [x] T014 [P] [US1] [clase] `tests/unit/detect.test.ts` sobre T013: los candidatos y los motivos de descarte (`own_outage`, `left_region`, `berth`) son los esperados, y la investigación se dispara al reaparecer el barco o a las 6 h.
 - [ ] T015 [P] [US1] [clase] `tests/unit/coverage.test.ts`: con dos barcos en una celda y un hueco conocido, `received_min / expected_min` da el valor calculado a mano. `sample_ok` es falso con menos de 30 minutos-barco. Un barco fondeado (a menos de 3 nudos) no suma minutos esperados, y la contribución del barco investigado se puede restar (R6).
 - [ ] T016 [P] [US1] [clase] `tests/unit/verdict.test.ts`: el esquema de `submit_verdict` rechaza un veredicto:
   - sin pruebas, o con más de 5;
@@ -177,9 +177,14 @@ description: "Tareas de Vigía v1, por historia de usuario"
   - escribe el resultado en `coverage`.
 
   Hace pasar T015.
-- [ ] T019 [US1] [clase] `src/detect/gaps.ts`, puro: encuentra los gaps de cada barco según el umbral de su clase. No usa `nav_status`: cuenta igual navegando que fondeado (clarificación tras el análisis).
+- [x] T019 [US1] [clase] `src/detect/gaps.ts`, puro: encuentra los gaps de cada barco según el umbral de su clase. No usa `nav_status`: cuenta igual navegando que fondeado (clarificación tras el análisis).
   `src/detect/exclusions.ts`: solape con `outages`, `headingOut` y gaps que empiezan en un `berth`.
-- [ ] T020 [US1] [clase] `src/detect/run.ts`: `runDetector(db, now)` crea los `candidates` en `detected` y los pasa a `discarded` con su motivo, o a `pending` cuando se dispara la investigación (al reaparecer o a las 6 h). Hace pasar T014.
+- [x] T020 [US1] [clase] `src/detect/run.ts`: `runDetector(db, now)` crea los `candidates` en `detected` y los pasa a `discarded` con su motivo, o a `pending` cuando se dispara la investigación (al reaparecer o a las 6 h). Hace pasar T014.
+  **Hecho (2026-10-20), con dos decisiones:**
+  - El detector solo mira hasta donde está cerrada la salud de la ingesta (`health_closed_until`). Si la ingesta se para, todos los barcos parecen callados; cuando vuelve, esos minutos quedan como caída y sus gaps se descartan como `own_outage`.
+  - Recorre `[detect_scanned_until, horizonte)`, abierto por la derecha: el minuto que empieza en el horizonte sigue abierto. La prueba de "cada 10 min igual que una vez" encontró el fallo con el intervalo cerrado: un barco que reaparecía justo en el borde no cerraba su gap.
+
+  **Sobre las 2 h grabadas el 2026-10-19** (en 146 ms): 702 gaps, 678 descartados (463 `own_outage` por el portátil apagado, 209 `berth` y 6 `left_region`) y 24 `pending`. De estos, 19 están en el extremo ruso (al este de 28° E), donde llegan mal las antenas finlandesas; 4 son gaps de barcos amarrados en Tallinn, cuyo puerto falta en `ports.geojson` (T005), y 1 está en mitad del golfo.
 - [ ] T021 [US1] [clase] Primero, leer `typescript/claude-api/README.md` y `tool-use.md` de la skill `claude-api`. Después, `src/agent/model.ts`:
   - la interfaz `ModelClient { create(params): Promise<Message> }`;
   - `AnthropicClient(profile)`, sobre `client.messages.create` (no la beta), con el `baseURL` del perfil. Para `local`, `apiKey: "ollama"`;
