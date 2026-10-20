@@ -190,6 +190,8 @@ export interface StreamEvents {
     lat: number;
     lon: number;
     gap_start: number;
+    /** When the vessel came back; null while silent. Live sends the mark again once it is back. */
+    gap_end: number | null;
     name: string | null;
     flag: string | null;
     type_label: string | null;

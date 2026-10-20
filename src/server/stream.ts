@@ -17,6 +17,27 @@ const MIN = 60_000;
 export const MARKS_MS = 24 * 60 * MIN;
 /** Ticks look back this much too, for rows committed a moment after their timestamp. */
 const OVERLAP_MS = 5_000;
+/** Live: how often the open gaps on the map are checked for the vessel's return. */
+const REOPEN_CHECK_MS = 15_000;
+
+interface MarkRow {
+  id: number;
+  mmsi: number;
+  lat: number;
+  lon: number;
+  gap_start: number;
+  gap_end: number | null;
+  name: string | null;
+  ship_type: number | null;
+}
+
+const MARK_SELECT = `SELECT c.id, c.mmsi, c.start_lat AS lat, c.start_lon AS lon, c.gap_start, c.gap_end, v.name, v.ship_type
+  FROM candidates c JOIN vessels v ON v.mmsi = c.mmsi`;
+
+function markEvent({ ship_type, ...r }: MarkRow): StreamEvent {
+  const data: StreamEvents["candidate"] = { ...r, flag: flagOf(r.mmsi), type_label: shipTypeLabel(ship_type), near: nearestPlace(r.lat, r.lon) };
+  return { event: "candidate", data };
+}
 
 /**
  * When things become visible. Live: when they were written. Replay: when they would have been,
@@ -37,6 +58,9 @@ export class StreamSession {
   private prev: number | null = null;
   private minute: number | null = null;
   private readonly sentMarks = new Set<number>();
+  /** Live: marks sent while the vessel was still silent, to send again when it is back. */
+  private readonly openMarks = new Set<number>();
+  private checkedOpen = 0;
   private readonly sentVerdicts = new Set<string>();
 
   constructor(
@@ -65,12 +89,13 @@ export class StreamSession {
     if (this.prev !== null && t < this.prev) {
       // The replay started over.
       this.sentMarks.clear();
+      this.openMarks.clear();
       this.sentVerdicts.clear();
       this.minute = null;
       out.push({ event: "reset", data: { t } }, ...this.snapshot(t));
     } else {
       const from = (this.prev ?? t) - OVERLAP_MS;
-      out.push(...this.marks(from, t), ...this.verdicts(from, t));
+      out.push(...this.marks(from, t), ...this.closed(t), ...this.verdicts(from, t));
       this.prev = t;
     }
     out.push({ event: "positions", data: { t, vessels: positionsAt(this.db, t) } });
@@ -80,24 +105,38 @@ export class StreamSession {
 
   private snapshot(t: number): StreamEvent[] {
     this.prev = t;
+    this.checkedOpen = t;
     return [...this.marks(t - MARKS_MS, t), ...this.verdicts(t - MARKS_MS - THRESHOLDS.triggerMs, t)];
   }
 
   private marks(from: number, to: number): StreamEvent[] {
     const rows = this.db
-      .query<{ id: number; mmsi: number; lat: number; lon: number; gap_start: number; name: string | null; ship_type: number | null }, [number, number]>(
-        `SELECT c.id, c.mmsi, c.start_lat AS lat, c.start_lon AS lon, c.gap_start, v.name, v.ship_type
-         FROM candidates c JOIN vessels v ON v.mmsi = c.mmsi
+      .query<MarkRow, [number, number]>(
+        `${MARK_SELECT}
          WHERE c.state NOT IN ('detected', 'discarded') AND ${this.timing.seen} > ? AND ${this.timing.seen} <= ?
          ORDER BY c.gap_start`,
       )
       .all(from, to)
       .filter((r) => !this.sentMarks.has(r.id));
-    for (const r of rows) this.sentMarks.add(r.id);
-    return rows.map(({ ship_type, ...r }) => {
-      const data: StreamEvents["candidate"] = { ...r, flag: flagOf(r.mmsi), type_label: shipTypeLabel(ship_type), near: nearestPlace(r.lat, r.lon) };
-      return { event: "candidate", data };
-    });
+    for (const r of rows) {
+      this.sentMarks.add(r.id);
+      // Replay knows when each vessel came back (the panel cuts the silence at the time it shows);
+      // live finds out later.
+      if (this.replay === null && r.gap_end === null) this.openMarks.add(r.id);
+    }
+    return rows.map(markEvent);
+  }
+
+  /** Live: the marks whose vessel has come back since they were sent, sent again with gap_end. */
+  private closed(t: number): StreamEvent[] {
+    if (this.openMarks.size === 0 || t - this.checkedOpen < REOPEN_CHECK_MS) return [];
+    this.checkedOpen = t;
+    const ids = [...this.openMarks];
+    const rows = this.db
+      .query<MarkRow, number[]>(`${MARK_SELECT} WHERE c.gap_end IS NOT NULL AND c.id IN (${ids.map(() => "?").join(", ")})`)
+      .all(...ids);
+    for (const r of rows) this.openMarks.delete(r.id);
+    return rows.map(markEvent);
   }
 
   private verdicts(from: number, to: number): StreamEvent[] {

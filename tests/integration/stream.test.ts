@@ -63,6 +63,7 @@ describe("replay stream", () => {
       lat: 59.7,
       lon: expect.any(Number),
       gap_start: at(100) - 30_000,
+      gap_end: expect.any(Number),
       // Who and where, so the map can list it without asking for the case.
       name: "TEST 230000101",
       flag: "Finland",
@@ -139,6 +140,24 @@ describe("live stream", () => {
     expect(of(session.tick(), "dossier")).toEqual([{ candidate_id: a45, version: 2, verdict: "likely_dark", confidence: "medium" }]);
     now += 1000;
     expect(of(session.tick(), "dossier")).toEqual([]);
+  });
+});
+
+describe("live stream, a vessel coming back", () => {
+  test("a mark sent while the vessel was silent is sent again once it is back", async () => {
+    const { db, open } = await world();
+    let now = END + 60_000;
+    const session = new StreamSession(db, "live", () => now);
+    const first = of(session.open(), "candidate").find((c) => c.id === open);
+    expect(first?.gap_end).toBeNull();
+    db.query("UPDATE candidates SET gap_end = ?, end_lat = start_lat, end_lon = start_lon WHERE id = ?").run(END, open);
+    // Checked every 15 s, not every tick.
+    now += 1000;
+    expect(of(session.tick(), "candidate")).toEqual([]);
+    now += 15_000;
+    expect(of(session.tick(), "candidate").map((c) => [c.id, c.gap_end])).toEqual([[open, END]]);
+    now += 16_000;
+    expect(of(session.tick(), "candidate")).toEqual([]);
   });
 });
 

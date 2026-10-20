@@ -12,6 +12,8 @@ export type Mark = StreamEvents["candidate"] & {
 
 /** Gap marks older than this leave the map, as on the server. */
 const MARKS_MS = 24 * 3_600_000;
+/** How much of each vessel's recent route the map draws behind it, in data time. */
+const TRAIL_MS = 20 * 60_000;
 const RETRY_MS = 2_000;
 
 export class Feed {
@@ -23,11 +25,14 @@ export class Feed {
   connected = $state(false);
   vessels = $state.raw<VesselTick[]>([]);
   marks = $state.raw<Mark[]>([]);
+  /** Each vessel's recent positions, [lon, lat], oldest first: the trails behind them. */
+  trails = $state.raw<[number, number][][]>([]);
   health = $state.raw<StreamEvents["health"] | null>(null);
 
   private source: EventSource | null = null;
   private retry: ReturnType<typeof setTimeout> | undefined;
   private readonly byId = new Map<number, Mark>();
+  private readonly trailOf = new Map<number, [number, number, number][]>();
 
   connect(opts: { at?: number; speed?: number } = {}): void {
     this.close();
@@ -45,14 +50,18 @@ export class Feed {
       this.speed = d.speed;
       this.range = d.range;
       this.clearMarks();
+      this.trailOf.clear();
     });
     on("positions", (d) => {
       this.t = d.t;
       this.vessels = d.vessels;
       this.expireMarks(d.t);
+      this.extendTrails(d.t, d.vessels);
     });
     on("candidate", (d) => {
-      this.byId.set(d.id, { ...d, verdict: null, confidence: null });
+      // Live sends a mark again when its vessel is back: it keeps the verdict it may have.
+      const prev = this.byId.get(d.id);
+      this.byId.set(d.id, { ...d, verdict: prev?.verdict ?? null, confidence: prev?.confidence ?? null });
       this.marks = [...this.byId.values()];
     });
     on("dossier", (d) => {
@@ -62,7 +71,10 @@ export class Feed {
       this.marks = [...this.byId.values()];
     });
     on("health", (d) => (this.health = d));
-    on("reset", () => this.clearMarks());
+    on("reset", () => {
+      this.clearMarks();
+      this.trailOf.clear();
+    });
     es.onopen = () => (this.connected = true);
     es.onerror = () => {
       this.connected = false;
@@ -87,6 +99,21 @@ export class Feed {
   private clearMarks(): void {
     this.byId.clear();
     this.marks = [];
+  }
+
+  /** A point per new position; vessels no longer heard from lose their trail. */
+  private extendTrails(t: number, vessels: VesselTick[]): void {
+    const heard = new Set<number>();
+    for (const [mmsi, lat, lon] of vessels) {
+      heard.add(mmsi);
+      const trail = this.trailOf.get(mmsi) ?? [];
+      const last = trail.at(-1);
+      if (last === undefined || last[1] !== lon || last[2] !== lat) trail.push([t, lon, lat]);
+      while (trail.length > 0 && trail[0]![0] < t - TRAIL_MS) trail.shift();
+      this.trailOf.set(mmsi, trail);
+    }
+    for (const mmsi of this.trailOf.keys()) if (!heard.has(mmsi)) this.trailOf.delete(mmsi);
+    this.trails = [...this.trailOf.values()].filter((tr) => tr.length > 1).map((tr) => tr.map(([, lon, lat]) => [lon, lat]));
   }
 
   private expireMarks(t: number): void {
