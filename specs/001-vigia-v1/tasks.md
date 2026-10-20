@@ -332,10 +332,11 @@ description: "Tareas de Vigía v1, por historia de usuario"
   - La fila de `recordings` va en las dos bases.
   - Sobre 3 h reales: 23.168 posiciones de 435 barcos, 2,3 MB, en 0,3 s.
   - Ojo: al quedarse con una posición por minuto, en la demo un gap puede empezar hasta 30 s antes. Si se le pasara el detector, los vería como nuevos. No importa porque la demo solo se reproduce, pero el set del eval guarda todas las posiciones.
-- [ ] T047 [US2] [bloque] `src/cli/demo-build.ts` (`bun run demo:build --from --to`), en tres pasos:
+- [x] T047 [US2] [bloque] `src/cli/demo-build.ts` (`bun run demo:build --from --to`), en tres pasos:
   1. investiga en la base principal los candidatos de la ventana que aún no tienen expediente;
   2. hace `record --kind demo` de 24 h;
   3. copia los briefs y el informe de eval que ya existan.
+  **Hecho (2026-10-20):** `src/replay/demo-build.ts`, escrito y probado sin el PC: la investigación recibe el cliente, así que las pruebas usan modelos de guion. Si el modelo no responde o se pasaría del tope, para antes de grabar, para no dejar una demo con casos a medias. Los descartados de la ventana también van a la demo. Falta ejecutarlo de verdad, con el PC: es T077, y con él T049.
 
   Sale en `demo/vigia-demo.sqlite` y falla si pasa de 50 MB. Investiga antes de reducir para que el agente vea los datos completos (así está en `contracts/cli.md`). Necesita el PC.
 - [x] T048 [US2] [clase] `src/cli/demo.ts` (`bun run demo`): compila el panel si no existe `panel/build`, abre `demo/vigia-demo.sqlite` en solo lectura y arranca el servidor en modo `replay` en el puerto 4250. No necesita `.env` ni red.
@@ -511,10 +512,12 @@ description: "Tareas de Vigía v1, por historia de usuario"
   - las cifras, **solo** las del último informe de eval;
   - los límites y el aviso de proyecto educativo;
   - las atribuciones (Digitraffic con CC BY 4.0, GFW de uso no comercial, OSM con ODbL) y la licencia MIT.
+  **Avance (2026-10-20):** `README.md` escrito, con cada afirmación comprobada contra el código: umbrales, herramientas, el límite de 50 nudos, la cita de pasos inexistentes y el prompt. La sección de cifras dice que aún no hay, hasta que haya informe de eval. Falta la captura o el GIF, que se hace sobre la demo de verdad (T077) para no enseñar los barcos sintéticos.
 - [ ] T073 [clase] SC-008: revisar 10 expedientes al azar y anotar en `specs/001-vigia-v1/review-sc008.md` si cada veredicto se justifica con sus pruebas. Si no, ajustar `system.md`, lo que da una nueva `agent_version`.
 - [ ] T074 [bloque] La comparación de pago (los 10 €): con `VIGIA_BUDGET_USD=10`, `bun run eval --profile haiku` y `--profile sonnet` sobre la misma muestra. Comprobar que con Haiku el coste medio por caso es de 0,01 $ o menos (SC-004).
 - [ ] T075 [clase] Preparar el conjunto del eval (la grabación larga y las etiquetas) como descarga aparte, con `bun run record --kind eval` y la atribución de T045. No se publica sin la confirmación de Marcos.
-- [ ] T076 [clase] Repasar `quickstart.md` de principio a fin y corregir lo que no cuadre.
+- [x] T076 [clase] Repasar `quickstart.md` de principio a fin y corregir lo que no cuadre.
+  **Hecho (2026-10-20):** reescrito tras US2-US5. Comprobados los comandos y sus opciones, el proxy de `/api` del panel en desarrollo, las teclas del etiquetado y la velocidad por defecto. Añade `bun install` como workspace, `vigia-server.service` (escucha en 127.0.0.1, con túnel ssh), `loginctl enable-linger`, el brief, `demo:build` y las comprobaciones de US4 con `/health`. `deploy/vigia-ingest.service` ya no habla de aisstream. Los apartados 2 y 5 solo se pueden ejecutar con la Pi y el PC.
 - [ ] T077 [bloque] Reconstruir la demo con `bun run demo:build` cuando ya haya briefs e informe de eval. Comprobar que ocupa 50 MB o menos y repetir T049.
 - [ ] T078 [bloque] Demo pública en la Pi, detrás de Cloudflare Tunnel (constitución, "Restricciones técnicas"): en modo `public` (solo lectura) con los datos en vivo, o en `replay` sobre `demo/vigia-demo.sqlite`. No se publica nada sin la confirmación de Marcos.
 

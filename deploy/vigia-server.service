@@ -1,0 +1,25 @@
+# Vigía: panel, API, detector, coverage and the agent's queue, in live mode, as a systemd user unit
+# on the Pi. Install it like vigia-ingest.service:
+#
+#   cp deploy/vigia-server.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now vigia-server
+#   journalctl --user -u vigia-server -f
+#
+# Live mode listens on 127.0.0.1 only: it can investigate and label (R13). To open the panel from
+# another machine: ssh -L 4250:127.0.0.1:4250 <pi>, then http://localhost:4250.
+# The model and the budget come from ~/vigia/.env (VIGIA_LOCAL_URL, VIGIA_BUDGET_USD…).
+
+[Unit]
+Description=Vigía server (live)
+After=network-online.target vigia-ingest.service
+Wants=network-online.target
+
+[Service]
+WorkingDirectory=%h/vigia
+Environment=VIGIA_MODE=live
+ExecStart=%h/.bun/bin/bun run src/cli/server.ts
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
