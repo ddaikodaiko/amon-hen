@@ -109,6 +109,11 @@
   <p class="muted">
     Last seen at {c.start.lat.toFixed(4)} N, {c.start.lon.toFixed(4)} E
     {#if c.end}· back at {c.end.lat.toFixed(4)} N, {c.end.lon.toFixed(4)} E{/if}
+    {#if data.meta.mode === "replay"}
+      · <a href="/?at={c.gap_start - 15 * 60_000}&vessel={c.mmsi}">Show on the map</a>
+    {:else}
+      · <a href="/?vessel={c.mmsi}">Show on the map</a>
+    {/if}
   </p>
   {#if c.discard_reason}
     <p>Discarded by the detector: {DISCARD_LABEL[c.discard_reason]}.</p>

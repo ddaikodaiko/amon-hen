@@ -75,8 +75,11 @@ nav a[aria-current="page"] {
   background: var(--line);
 }
 
+/* A column, so a page can fill the height left (the map). */
 main {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: 16px;
 }
 

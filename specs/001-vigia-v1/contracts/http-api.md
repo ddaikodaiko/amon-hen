@@ -20,6 +20,7 @@ En `replay` y `public`, el **servidor** responde 403 a todo lo marcado como ✎ 
 | `GET /api/label/next` | Siguiente candidato sin etiquetar, por orden cronológico | | **No incluye el veredicto del agente** |
 | `POST /api/labels` | `{candidate_id, value, note?}` | ✎ | Responde con el veredicto del agente (ya se puede revelar) |
 | `GET /api/coverage?hour=` | Celdas con tráfico y su `ratio`, para la capa del mapa: `[lat_min, lon_min, ratio, expected_min]` | | `hour` es la hora UTC (0-23); por defecto, la actual |
+| `GET /api/land` | `data/land.geojson`, el mapa base | | 404 mientras no exista: el mapa se pinta sin tierra |
 | `GET /api/health?from=&to=` | Minutos de ingesta y caídas | | |
 | `GET /api/eval/reports` | Informes, el último primero | | |
 | `GET /api/briefs` · `GET /api/briefs/:date` | Briefs | | |

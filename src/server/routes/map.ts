@@ -86,4 +86,17 @@ const vessel: Route = {
   },
 };
 
-export const MAP_ROUTES: Route[] = [coverage, vessel];
+/** The land polygons of the base map (T039). The map draws without them while they are missing. */
+export const LAND_FILE = new URL("../../../data/land.geojson", import.meta.url).pathname;
+
+const land: Route = {
+  method: "GET",
+  path: "/api/land",
+  handler: async () => {
+    const file = Bun.file(LAND_FILE);
+    if (!(await file.exists())) throw new HttpError(404, "not_found", "data/land.geojson is not there yet (T039)");
+    return new Response(file, { headers: { "content-type": "application/geo+json", "cache-control": "max-age=86400" } });
+  },
+};
+
+export const MAP_ROUTES: Route[] = [coverage, vessel, land];

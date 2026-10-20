@@ -309,11 +309,18 @@ description: "Tareas de Vigía v1, por historia de usuario"
   - La lógica de cada tic está en `StreamSession`, sin HTTP, y se prueba con un reloj de pega (`tests/integration/stream.test.ts`).
 - [x] T042 [P] [US2] [clase] `src/server/routes/map.ts`: `GET /api/coverage?hour=` y `GET /api/vessels/:mmsi`.
   **Hecho (2026-10-20):** la cobertura va compacta (`[lat_min, lon_min, ratio, expected_min]` por celda con tráfico), y `/api/vessels/:mmsi` admite `?at=` para que el rastro siga al reloj del replay.
-- [ ] T043 [US2] [clase] `panel/src/routes/+page.svelte` y `panel/src/lib/map/` (FR-014):
+- [x] T043 [US2] [clase] `panel/src/routes/+page.svelte` y `panel/src/lib/map/` (FR-014):
   - MapLibre con un estilo local: fondo de mar y `land.geojson`, sin teselas remotas;
   - la capa de barcos, desde el SSE, y el rastro del barco seleccionado;
   - las marcas de los gaps y la capa de cobertura, que se activa y desactiva;
   - el control de velocidad en replay.
+  **Hecho (2026-10-20), salvo la tierra:** `data/land.geojson` sale de T039, que aún no está; mientras falta, `GET /api/land` da 404 y el mapa se pinta solo con el mar. Detalles:
+  - Los barcos son flechas giradas por el rumbo, y puntos si están parados.
+  - Las marcas de gap tienen el color del veredicto, y al pulsarlas se abre el caso.
+  - Al pulsar un barco se ven su ficha, su rastro de 6 h y un anillo en su última posición, que sigue ahí mientras está callado.
+  - `/?at=<ms>&vessel=<mmsi>` abre un momento del replay y un barco; el expediente enlaza ahí ("Show on the map").
+  - MapLibre 6 calcula la URL de su worker a partir del módulo, y con Vite eso falla, así que se registra con `setWorkerUrl` y `?url`.
+  - Comprobado con Chromium headless por CDP sobre la copia de las 2 h reales: 249 barcos, 24 gaps al este y la capa de cobertura.
 - [ ] T044 [US2] [clase] En el panel, el botón de reinvestigar está desactivado cuando `/api/meta` dice `replay` o `public`, o cuando no hay modelo. Al lado, el texto de qué hace falta (escenario 3, FR-026).
 - [ ] T045 [US2] [clase] Atribución de Digitraffic ("Source: Fintraffic / digitraffic.fi, CC BY 4.0") y de OSM (ODbL) en el pie del panel y en `data/README.md`. Con CC BY 4.0, la demo y el set del eval se pueden publicar.
 - [ ] T046 [US2] [clase] `src/cli/record.ts`: `bun run record --from --to --kind demo|eval --out`. Copia la ventana a una base aparte con sus candidatos, expedientes y trazas. Con `--kind demo`, reduce a una posición por barco y minuto. Registra la fila en `recordings`. Hace pasar T038.
