@@ -22,8 +22,8 @@ export const BOUNDS: [[number, number], [number, number]] = [
 
 const COLOR = {
   sea: "#0b1620",
-  land: "#1a232c",
-  coast: "#2b3946",
+  land: "#252f3a",
+  coast: "#3d4c5c",
   vessel: "#cfe3f5",
   selected: "#4ea1ff",
   likely_dark: "#ff3b3b",

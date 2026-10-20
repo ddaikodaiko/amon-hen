@@ -297,7 +297,8 @@ description: "Tareas de Vigía v1, por historia de usuario"
 
 ### Implementation for User Story 2
 
-- [ ] T039 [P] [US2] [clase] `data/land.geojson`: los polígonos de tierra de OSM (los simplificados de osmdata.openstreetmap.de), recortados a la región con margen y simplificados con `bunx mapshaper`, que es una herramienta de desarrollo y no una dependencia. Como mucho 3 MB. La atribución ODbL va en `data/README.md`.
+- [x] T039 [P] [US2] [clase] `data/land.geojson`: los polígonos de tierra de OSM (los simplificados de osmdata.openstreetmap.de), recortados a la región con margen y simplificados con `bunx mapshaper`, que es una herramienta de desarrollo y no una dependencia. Como mucho 3 MB. La atribución ODbL va en `data/README.md`.
+  **Hecho (2026-10-20):** datos del 2026-10-20, recortados a 21,5-31,4 E y 58,7-61,3 N y sin atributos: 1.884 polígonos, 600 KB, sin necesidad de simplificar más. El comando está en `data/README.md`. Con zoom sobre un gap las islas salen angulosas, pero se ve si el barco iba entre islas o en mar abierto. La tierra (`#252f3a`) se aclaró para que se distinga del mar. Comprobado en headless en el mapa y en `/label`.
 - [x] T040 [US2] [clase] `src/replay/clock.ts`: el reloj del replay, con velocidades 1, 10, 60 y 300, sobre el rango de tiempo de la base. Da la hora actual del replay y las posiciones de cada tic. Hace pasar T037.
   **Hecho (2026-10-20):** al final de la grabación vuelve a empezar. `positionsAt` da la última posición de cada barco oído en los 10 min anteriores: uno callado más tiempo sale del mapa y queda su marca de gap.
 - [x] T041 [US2] [clase] `src/server/stream.ts`:
