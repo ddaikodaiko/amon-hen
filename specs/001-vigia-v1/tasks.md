@@ -71,6 +71,8 @@ description: "Tareas de Vigía v1, por historia de usuario"
   - El script ya amplía la consulta (muelles y `quay` de todo el golfo, dársenas, marinas y los puertos y atraques de OpenSeaMap), pero no se ha podido ejecutar: Overpass estaba saturado. **Siguiente paso:** ejecutarlo, repetir la medición y repasar en un mapa los casos que fallen. Si los muelles urbanos siguen fuera, decidir si se añade la regla "parado y a menos de 150 m de tierra" (necesita `land.geojson`).
   - Los datos derivados de OSM van con licencia ODbL y la atribución dentro del archivo.
 
+  **Estado (2026-10-20):** el script ya pide el golfo en 8 franjas de 1° con reintentos (15, 30, 60 y 120 s), pero Overpass da 502 incluso a la primera franja; solo responde a consultas pequeñas (la caja de Tallinn sí). Medido el borrador sobre las 2 h grabadas: 65 de 119 amarrados dentro, y 1 de 77 fondeados dentro por error (Lugaport). Los amarrados que faltan se agrupan en los muelles urbanos de Helsinki (60,16-60,18 N, 24,92-25,00 E; 17 barcos) y en Tallinn (59,46 N, 24,64-24,72 E; 9 barcos), y producen candidatos falsos en el detector (T020). Algunos "amarrados" están en mitad del mar (fondeados que no cambiaron el estado), así que el 100 % no es el objetivo.
+
 ---
 
 ## Phase 2: Foundational (lo que bloquea todas las historias)
@@ -150,7 +152,7 @@ description: "Tareas de Vigía v1, por historia de usuario"
   | Gap abierto de 6 h | Sí |
 - [x] T014 [P] [US1] [clase] `tests/unit/detect.test.ts` sobre T013: los candidatos y los motivos de descarte (`own_outage`, `left_region`, `berth`) son los esperados, y la investigación se dispara al reaparecer el barco o a las 6 h.
 - [x] T015 [P] [US1] [clase] `tests/unit/coverage.test.ts`: con dos barcos en una celda y un hueco conocido, `received_min / expected_min` da el valor calculado a mano. `sample_ok` es falso con menos de 30 minutos-barco. Un barco fondeado (a menos de 3 nudos) no suma minutos esperados, y la contribución del barco investigado se puede restar (R6).
-- [ ] T016 [P] [US1] [clase] `tests/unit/verdict.test.ts`: el esquema de `submit_verdict` rechaza un veredicto:
+- [x] T016 [P] [US1] [clase] `tests/unit/verdict.test.ts`: el esquema de `submit_verdict` rechaza un veredicto:
   - sin pruebas, o con más de 5;
   - con un `step` que no está en la traza;
   - con un valor fuera de su enumeración;
@@ -204,7 +206,7 @@ description: "Tareas de Vigía v1, por historia de usuario"
 - [ ] T024 [P] [US1] [clase] Dos herramientas más:
   - `src/agent/tools/get_coverage.ts`: la celda, su `ratio`, `sample_ok` y la media de las celdas vecinas, restando la contribución del barco investigado (R6);
   - `src/agent/tools/get_nearby.ts`: los barcos a menos de `radius_nm`, en `±window_min` de `at`, si siguieron emitiendo durante el gap, cuántos saltan de posición (`jumping_count`, interferencia GNSS) y los recuentos.
-- [ ] T025 [US1] [clase] `src/agent/tools/submit_verdict.ts`: el esquema zod de `contracts/agent-tools.md`. Comprueba cada `step` contra la traza en curso y hace pasar T016.
+- [x] T025 [US1] [clase] `src/agent/tools/submit_verdict.ts`: el esquema zod de `contracts/agent-tools.md`. Comprueba cada `step` contra la traza en curso y hace pasar T016.
   `src/agent/tools/index.ts`: el registro de nombre → esquema zod.
   - El `input_schema` sale de `z.toJSONSchema`.
   - `strict: true` solo en los perfiles de Anthropic.

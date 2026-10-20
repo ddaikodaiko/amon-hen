@@ -9,17 +9,20 @@ import { parseArgs } from "node:util";
 
 const BUFFER_M = 150;
 const MAX_AREA_KM2 = 25;
-const BOX = "59.2,22.5,60.8,30.4";
+// The whole gulf in one request times out on the public Overpass, so it goes in 1° tiles.
+const TILES = Array.from({ length: 8 }, (_, i) => `59.2,${22.5 + i},60.8,${Math.min(23.5 + i, 30.4)}`);
 // Primorsk and Vysotsk terminals are not tagged as ports, so their piers and industrial
 // areas are taken from around them.
 const AROUND = ["6000,60.345,28.65", "5000,60.62,28.57"];
 
-const query = `[out:json][timeout:170];(
-  way["landuse"="harbour"](${BOX}); relation["landuse"="harbour"](${BOX});
-  way["industrial"="port"](${BOX}); relation["industrial"="port"](${BOX});
-  way["man_made"~"^(pier|quay)$"](${BOX}); way["waterway"="dock"](${BOX});
-  way["leisure"="marina"](${BOX}); relation["leisure"="marina"](${BOX});
-  node["seamark:type"~"^(harbour|berth)$"](${BOX});
+const tileQuery = (box: string) => `[out:json][timeout:120];(
+  way["landuse"="harbour"](${box}); relation["landuse"="harbour"](${box});
+  way["industrial"="port"](${box}); relation["industrial"="port"](${box});
+  way["man_made"~"^(pier|quay)$"](${box}); way["waterway"="dock"](${box});
+  way["leisure"="marina"](${box}); relation["leisure"="marina"](${box});
+  node["seamark:type"~"^(harbour|berth)$"](${box});
+);out geom;`;
+const aroundQuery = `[out:json][timeout:120];(
   ${AROUND.map((a) => `nwr(around:${a})["industrial"]; nwr(around:${a})["man_made"="pier"]; nwr(around:${a})["landuse"="industrial"];`).join("\n  ")}
 );out geom;`;
 
@@ -39,13 +42,30 @@ interface Element {
 
 const { values } = parseArgs({ options: { url: { type: "string" } } });
 const url = values.url ?? "https://overpass-api.de/api/interpreter";
-const res = await fetch(url, {
-  method: "POST",
-  headers: { "User-Agent": "vigia/0.1 (educational project)" },
-  body: new URLSearchParams({ data: query }),
-});
-if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
-const elements = ((await res.json()) as { elements: Element[] }).elements;
+
+/** One request, retried with exponential backoff while the server is busy, as it asks. */
+async function overpass(query: string): Promise<Element[]> {
+  for (let attempt = 0, waitS = 15; ; attempt++, waitS *= 2) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "User-Agent": "vigia/0.1 (educational project)" },
+      body: new URLSearchParams({ data: query }),
+    });
+    if (res.ok) return ((await res.json()) as { elements: Element[] }).elements;
+    if (attempt === 4 || ![429, 502, 503, 504].includes(res.status)) throw new Error(`${url}: HTTP ${res.status}`);
+    console.log(`HTTP ${res.status}, retrying in ${waitS} s`);
+    await Bun.sleep(waitS * 1000);
+  }
+}
+
+// Ways that cross a tile edge come in both tiles.
+const byId = new Map<string, Element>();
+for (const [i, q] of [...TILES.map(tileQuery), aroundQuery].entries()) {
+  const got = await overpass(q);
+  for (const e of got) byId.set(`${e.type}/${e.id}`, e);
+  console.log(`request ${i + 1}/${TILES.length + 1}: ${got.length} elements`);
+}
+const elements = [...byId.values()];
 
 const M_PER_DEG_LAT = 111_320;
 
