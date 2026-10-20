@@ -473,22 +473,30 @@ description: "Tareas de Vigía v1, por historia de usuario"
 
 ### Tests for User Story 5 ⚠️
 
-- [ ] T066 [P] [US5] [clase] `tests/unit/brief.test.ts`, con expedientes de fixtures:
+- [x] T066 [P] [US5] [clase] `tests/unit/brief.test.ts`, con expedientes de fixtures:
   - los recuentos por veredicto cuadran;
   - los 5 principales enlazan a casos que existen;
   - un día sin candidatos da un brief que lo dice.
+  **Hecho (2026-10-20):** diez tests sobre las trazas sintéticas, con tres casos investigados (`likely_dark`, `coverage_gap`, `inconclusive`) y uno esperando. Cubren el orden de los principales, un día sin casos (`skipped`), la regeneración, la narrativa (hecha una sola vez, sin modelo, con tope y cobrada al mes) y `GET /api/briefs`.
 
 ### Implementation for User Story 5
 
-- [ ] T067 [US5] [clase] `src/brief/sections.ts`, la parte determinista de las últimas 24 h:
+- [x] T067 [US5] [clase] `src/brief/sections.ts`, la parte determinista de las últimas 24 h:
   - los recuentos por veredicto;
   - los 5 principales: primero los `likely_dark`, por confianza y por duración del gap, y después el resto;
   - la salud y el gasto del día.
+  **Hecho (2026-10-20):**
+  - **Qué cuenta:** los casos cuyo último expediente se escribió en la ventana, de modo que cada veredicto sale en un solo brief. Si contara por `gap_start`, un gap aún abierto a las 08:00 no saldría en ningún brief.
+  - **Ventana:** va del brief del día anterior al de hoy, a las `VIGIA_BRIEF_HOUR` de Madrid: 25 h el 25 de octubre y 23 h a finales de marzo, sin solaparse ni dejar huecos.
+  - **Resto:** los casos en espera son una foto del momento en que se escribe; los descartados van por `created_at`; el gasto del día es la suma de los expedientes de la ventana.
 
   Se guarda en `briefs` con `narrative_state = pending`, o `skipped` si no hubo casos. Hace pasar T066.
-- [ ] T068 [US5] [clase] `src/brief/narrative.ts`: un párrafo en inglés escrito por el modelo a partir de `sections_json`, sin herramientas y contando su coste en `budget`. El trabajador de la cola (T062) lo genera cuando hay modelo y pasa el estado a `done`.
-- [ ] T069 [US5] [clase] `src/cli/brief.ts` (`bun run brief [--date]`), `deploy/vigia-brief.service` y `deploy/vigia-brief.timer`, con `OnCalendar=*-*-* 08:00:00 Europe/Madrid` y `Persistent=true`.
-- [ ] T070 [P] [US5] [clase] `GET /api/briefs`, `GET /api/briefs/:date` y `panel/src/routes/briefs/+page.svelte`: la lista y el detalle, con enlaces a `/cases/[id]`.
+- [x] T068 [US5] [clase] `src/brief/narrative.ts`: un párrafo en inglés escrito por el modelo a partir de `sections_json`, sin herramientas y contando su coste en `budget`. El trabajador de la cola (T062) lo genera cuando hay modelo y pasa el estado a `done`.
+  **Hecho (2026-10-20):** el prompt (`src/brief/prompt.md`) pide un párrafo con solo las cifras dadas, sin personas. El modelo recibe las horas en texto y no los ids. Una conexión caída o un 5xx deja el párrafo en `pending` (`unreachable`, compartido con el bucle). Antes de cada llamada se comprueba el tope con el peor caso. El trabajador lo escribe cuando la cola está vacía, de uno en uno, para no competir con los casos por la GPU.
+- [x] T069 [US5] [clase] `src/cli/brief.ts` (`bun run brief [--date]`), `deploy/vigia-brief.service` y `deploy/vigia-brief.timer`, con `OnCalendar=*-*-* 08:00:00 Europe/Madrid` y `Persistent=true`.
+  **Hecho (2026-10-20):** también `--no-narrative`. `systemd-analyze calendar` da la próxima ejecución a las 08:00 CEST. Con el PC apagado, la sonda de 3 s deja el párrafo esperando y el CLI lo dice.
+- [x] T070 [P] [US5] [clase] `GET /api/briefs`, `GET /api/briefs/:date` y `panel/src/routes/briefs/+page.svelte`: la lista y el detalle, con enlaces a `/cases/[id]`.
+  **Hecho (2026-10-20):** a la izquierda la lista de días con sus recuentos y a la derecha el brief: el párrafo (o "espera al modelo"), los recuentos, la tabla de principales con enlaces a `/cases/[id]`, lo que esperaba, los descartados, la salud y el gasto. Comprobado en headless.
 - [ ] T071 [US5] [bloque] Instalar el timer en la Pi y comprobar que hay brief los 7 días de una semana, a su hora (SC-007).
 
 **Checkpoint**: todas las historias funcionan.

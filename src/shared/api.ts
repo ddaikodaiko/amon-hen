@@ -309,3 +309,50 @@ export interface HealthReport {
   outages: OutageInfo[];
   totals: { minutes: number; down: number; messages: number };
 }
+
+export interface BriefCase {
+  id: number;
+  mmsi: number;
+  name: string | null;
+  flag: string | null;
+  verdict: VerdictValue;
+  confidence: Confidence;
+  gap_start: number;
+  /** Null while the gap is open. */
+  duration_min: number | null;
+}
+
+/** The deterministic part of a brief (FR-023), written at its hour whatever the model does. */
+export interface BriefSections {
+  /** The 24 h it covers: up to VIGIA_BRIEF_HOUR, Madrid time, of its date. */
+  window: { start: number; end: number };
+  /** The cases whose newest dossier was written in the window, by verdict: each verdict is in one brief only. */
+  verdicts: { cases: number; likely_dark: number; coverage_gap: number; inconclusive: number };
+  /** Cases waiting when the brief was written, by state. */
+  waiting: { pending: number; pending_no_model: number; pending_budget: number; error: number };
+  /** Gaps the detector found in the window and threw out. */
+  discarded: Record<DiscardReason, number>;
+  /** Up to 5: likely dark first, by confidence and then by how long the gap was; then the rest. */
+  top: BriefCase[];
+  health: { minutes: number; down: number; messages: number; outages: OutageInfo[] };
+  spend: { day_usd: number; month_usd: number; cap_usd: number };
+}
+
+export type NarrativeState = "pending" | "done" | "skipped";
+
+/** GET /api/briefs/:date */
+export interface Brief {
+  /** YYYY-MM-DD */
+  date: string;
+  sections: BriefSections;
+  /** A paragraph by the model, once it was there; null until then, or when there was nothing to tell. */
+  narrative: string | null;
+  narrative_state: NarrativeState;
+  generated_at: number;
+}
+
+/** GET /api/briefs */
+export interface BriefList {
+  /** The newest first. */
+  items: { date: string; generated_at: number; narrative_state: NarrativeState; verdicts: BriefSections["verdicts"] }[];
+}

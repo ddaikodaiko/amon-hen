@@ -1,0 +1,17 @@
+# Vigía: the daily brief (FR-023), started by vigia-brief.timer. A systemd user unit on the Pi.
+#
+#   cp deploy/vigia-brief.service deploy/vigia-brief.timer ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now vigia-brief.timer
+#   systemctl --user list-timers vigia-brief.timer
+#   journalctl --user -u vigia-brief
+#
+# Writes the sections at once. The paragraph comes from the model if it answers now; if not,
+# vigia-server writes it when the model is back (R11).
+
+[Unit]
+Description=Vigía daily brief
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/vigia
+ExecStart=%h/.bun/bin/bun run src/cli/brief.ts

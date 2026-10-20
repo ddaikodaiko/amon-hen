@@ -1,6 +1,7 @@
 import { existsSync, statSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
 import { type AppContext, errorResponse, HttpError, matchPath, type Route } from "./http";
+import { BRIEF_ROUTES } from "./routes/briefs";
 import { CANDIDATE_ROUTES } from "./routes/candidates";
 import { HEALTH_ROUTES } from "./routes/health";
 import { LABEL_ROUTES } from "./routes/labels";
@@ -30,7 +31,7 @@ const metaRoute: Route = {
   },
 };
 
-export const ROUTES: Route[] = [metaRoute, streamRoute, ...CANDIDATE_ROUTES, ...MAP_ROUTES, ...LABEL_ROUTES, ...HEALTH_ROUTES];
+export const ROUTES: Route[] = [metaRoute, streamRoute, ...CANDIDATE_ROUTES, ...MAP_ROUTES, ...LABEL_ROUTES, ...HEALTH_ROUTES, ...BRIEF_ROUTES];
 
 export interface AppOptions {
   /** Built panel (panel/build). Missing → the API still works. */

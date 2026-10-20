@@ -1,0 +1,12 @@
+# Every day at 08:00 Madrid time; Persistent catches up on a day the Pi was off at that hour.
+# The brief covers the 24 h up to VIGIA_BRIEF_HOUR (8 by default): change both together.
+
+[Unit]
+Description=Vigía daily brief at 08:00 Europe/Madrid
+
+[Timer]
+OnCalendar=*-*-* 08:00:00 Europe/Madrid
+Persistent=true
+
+[Install]
+WantedBy=timers.target

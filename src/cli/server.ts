@@ -1,5 +1,6 @@
 import { AnthropicClient } from "../agent/model";
 import { recoverInterrupted } from "../agent/queue";
+import { writeNarrative } from "../brief/narrative";
 import { loadConfig } from "../config";
 import { openDb } from "../db";
 import { SerialInvestigator } from "../server/investigator";
@@ -21,7 +22,9 @@ const model = mode === "live" ? new ModelStatus(new AnthropicClient(config.profi
 if (investigator !== undefined && model !== undefined) {
   const recovered = recoverInterrupted(db);
   if (recovered > 0) log(`${recovered} investigations cut off earlier go back to the queue`);
-  new LiveJobs({ db, investigator, model, coverage: coverageInWorker(config.dbPath), log }).start();
+  const local = config.profiles.local;
+  const narrate = (date: string) => writeNarrative(db, date, { client: new AnthropicClient(local), profile: local, capUsd: config.budgetUsd });
+  new LiveJobs({ db, investigator, model, coverage: coverageInWorker(config.dbPath), narrate, log }).start();
 }
 
 const server = serve({ db, config, mode, investigator, model });

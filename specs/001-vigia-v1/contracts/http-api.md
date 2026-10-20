@@ -23,7 +23,7 @@ En `replay` y `public`, el **servidor** responde 403 a todo lo marcado como ✎ 
 | `GET /api/land` | `data/land.geojson`, el mapa base | | 404 mientras no exista: el mapa se pinta sin tierra |
 | `GET /api/health?from=&to=` | Minutos de ingesta (`[minute_ts, msg_count, connected]`), caídas que se solapan con la ventana, totales y `closed_until` | | Por defecto, las 24 h antes del último minuto cerrado. 7 días como mucho |
 | `GET /api/eval/reports` | Informes, el último primero, con sus métricas | | |
-| `GET /api/briefs` · `GET /api/briefs/:date` | Briefs | | |
+| `GET /api/briefs` · `GET /api/briefs/:date` | Lista de briefs, el último primero, con los recuentos; y cada brief con sus secciones y el párrafo, si ya existe | | 404 si no hay brief de esa fecha |
 
 **Formas:** las de `src/shared/api.ts`, que comparten servidor y panel. Las horas son milisegundos UTC y los costes, USD.
 

@@ -1,4 +1,5 @@
 import { queued, transition } from "../agent/queue";
+import type { NarrativeOutcome } from "../brief/narrative";
 import type { CoverageJob, CoverageResult } from "../coverage/worker";
 import type { Database } from "../db";
 import { type DetectorRun, runDetector } from "../detect/run";
@@ -9,7 +10,8 @@ import type { ModelStatus } from "./model-status";
 
 // What the server does on its own in live mode (T062): the detector every minute, the coverage
 // every hour, and a worker that hands the queue to the investigator while the model answers. While
-// it does not, the new cases wait for it, keeping their place (FR-028).
+// it does not, the new cases wait for it, keeping their place (FR-028). With the queue empty, the
+// worker also has the model write the paragraphs of the briefs still without one (R11).
 
 export const DETECT_EVERY_MS = 60_000;
 export const COVERAGE_EVERY_MS = 3_600_000;
@@ -22,6 +24,8 @@ export interface JobsDeps {
   model: ModelStatus;
   /** Recomputes the coverage of the 7 days before `windowEnd`. */
   coverage: (windowEnd: number) => Promise<{ cells: number }>;
+  /** Writes the paragraph of the brief of that date (narrative.ts). */
+  narrate?: (date: string) => Promise<NarrativeOutcome>;
   ports?: Port[];
   now?: () => number;
   log?: (msg: string) => void;
@@ -48,6 +52,7 @@ export function coverageInWorker(dbPath: string): JobsDeps["coverage"] {
 export class LiveJobs {
   private readonly now: () => number;
   private readonly log: (msg: string) => void;
+  private narrating: Promise<void> | null = null;
 
   constructor(private readonly d: JobsDeps) {
     this.now = d.now ?? Date.now;
@@ -79,7 +84,27 @@ export class LiveJobs {
     }
     const ids = queued(db);
     for (const id of ids) this.d.investigator.enqueue(id, AUTO_PROFILE);
+    if (ids.length === 0 && !this.d.investigator.busy) this.narrate();
     return ids.length;
+  }
+
+  /** The oldest brief still waiting for its paragraph, one at a time. */
+  private narrate(): void {
+    const narrate = this.d.narrate;
+    if (narrate === undefined || this.narrating !== null) return;
+    const date = this.d.db
+      .query<{ date: string }, []>("SELECT date FROM briefs WHERE narrative_state = 'pending' ORDER BY date LIMIT 1")
+      .get()?.date;
+    if (date === undefined) return;
+    this.narrating = narrate(date)
+      .then((out) => this.log(`brief ${date}: ${out.state === "done" ? "paragraph written" : out.state}${"reason" in out ? ` (${out.reason})` : ""}`))
+      .catch((err: unknown) => this.log(`brief ${date}: ${err instanceof Error ? err.message : String(err)}`))
+      .finally(() => (this.narrating = null));
+  }
+
+  /** Resolves when the paragraph being written, if any, is done. */
+  async settled(): Promise<void> {
+    await this.narrating;
   }
 
   tick(): void {

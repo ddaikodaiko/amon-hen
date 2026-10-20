@@ -80,7 +80,7 @@ function describeReply(content: Anthropic.ContentBlock[]): string {
 }
 
 /** A dropped connection or a server error means "no model now"; the case waits for it to come back. */
-function unreachable(err: unknown): string | null {
+export function unreachable(err: unknown): string | null {
   if (err instanceof Anthropic.APIConnectionError) return err.message;
   if (err instanceof Anthropic.APIError && (err.status ?? 0) >= 500) return `HTTP ${err.status}: ${err.message}`;
   return null;

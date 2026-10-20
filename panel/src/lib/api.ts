@@ -2,6 +2,8 @@
 // so a change there breaks the panel's type check instead of the page.
 import type {
   ApiError as ApiErrorBody,
+  Brief,
+  BriefList,
   CandidateDetail,
   CandidateList,
   CandidateState,
@@ -79,6 +81,8 @@ export const api = {
       body: JSON.stringify({ candidate_id, value, note }),
     }),
   evalReports: (fetcher: Fetch = fetch) => request<EvalReports>(fetcher, "/api/eval/reports"),
+  briefs: (fetcher: Fetch = fetch) => request<BriefList>(fetcher, "/api/briefs"),
+  brief: (date: string, fetcher: Fetch = fetch) => request<Brief>(fetcher, `/api/briefs/${date}`),
   /** Without `from`, the span before the last closed minute. */
   health: (span: { from?: number; to?: number } = {}, fetcher: Fetch = fetch) => {
     const q = new URLSearchParams();

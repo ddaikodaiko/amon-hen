@@ -10,6 +10,8 @@ import type { Database } from "../db";
 export interface Investigator {
   /** Queues a case and returns its place: 1 is the one under way, or next. Queuing it again keeps its place. */
   enqueue(id: number, profile: ProfileName): number;
+  /** Whether a case is under way or queued. */
+  readonly busy: boolean;
 }
 
 /** The profile to escalate to from `primary`, if the configured one is above it (FR-010). */
@@ -36,6 +38,10 @@ export class SerialInvestigator implements Investigator {
     // drain() takes the first job before its first await, so the place below already counts it.
     if (this.running === null) this.drained = this.drain();
     return this.running === id ? 1 : this.queue.findIndex((j) => j.id === id) + (this.running === null ? 1 : 2);
+  }
+
+  get busy(): boolean {
+    return this.running !== null || this.queue.length > 0;
   }
 
   /** Resolves when the queue is empty. */

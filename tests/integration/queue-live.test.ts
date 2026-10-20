@@ -2,13 +2,15 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { FakeClient, type ScriptedReply } from "../../src/agent/model";
+import { writeNarrative } from "../../src/brief/narrative";
+import { generateBrief, readBrief } from "../../src/brief/sections";
 import { loadConfig } from "../../src/config";
 import { computeCoverage } from "../../src/coverage/compute";
 import { openDb } from "../../src/db";
 import { closeMinutes } from "../../src/ingest/health";
 import { ingestRaw } from "../../src/ingest/pipeline";
 import { SerialInvestigator } from "../../src/server/investigator";
-import { LiveJobs } from "../../src/server/jobs";
+import { type JobsDeps, LiveJobs } from "../../src/server/jobs";
 import { ModelStatus } from "../../src/server/model-status";
 import { END, PORTS, play, T0 } from "../fixtures/ais/gaps";
 
@@ -20,7 +22,7 @@ const script = (name: string): ScriptedReply[] =>
   (JSON.parse(readFileSync(join(import.meta.dir, "../fixtures/scripts", `${name}.json`), "utf8")) as { replies: ScriptedReply[] }).replies;
 type Db = ReturnType<typeof openDb>;
 
-function live(db: Db, start: number) {
+function live(db: Db, start: number, narrate?: JobsDeps["narrate"]) {
   let now = start;
   let pcOff = false;
   const probe = new FakeClient([]);
@@ -41,7 +43,7 @@ function live(db: Db, start: number) {
     },
     () => now,
   );
-  const jobs = new LiveJobs({ db, investigator, model, coverage: async (end) => computeCoverage(db, end), ports: PORTS, now: () => now });
+  const jobs = new LiveJobs({ db, investigator, model, coverage: async (end) => computeCoverage(db, end), ports: PORTS, now: () => now, narrate });
   return {
     jobs,
     investigator,
@@ -145,5 +147,29 @@ describe("live queue", () => {
     w.jobs.work();
     await w.investigator.idle();
     expect(db.query("SELECT version FROM dossiers WHERE candidate_id = ?").all(open)).toHaveLength(2);
+  });
+
+  test("with the queue empty, the worker has the model write the brief's paragraph, once", async () => {
+    const db = openDb(":memory:");
+    play(db, T0, END);
+    const config = loadConfig({});
+    const asked: string[] = [];
+    const w = live(db, END, (date) => {
+      asked.push(date);
+      return writeNarrative(db, date, { client: new FakeClient([{ content: [{ type: "text", text: "A quiet day." }], usage: { input_tokens: 10, output_tokens: 5 } }]), profile: config.profiles.local, capUsd: 0 });
+    });
+    await w.power(true);
+    w.jobs.tick();
+    await w.investigator.idle();
+    // The day's brief, from the four dossiers just written; its paragraph waits for the model.
+    generateBrief(db, config, "2026-10-20", END);
+    expect(asked).toEqual([]);
+    w.jobs.work();
+    await w.jobs.settled();
+    expect(asked).toEqual(["2026-10-20"]);
+    expect(readBrief(db, "2026-10-20")).toMatchObject({ narrative_state: "done", narrative: "A quiet day." });
+    w.jobs.work();
+    await w.jobs.settled();
+    expect(asked).toHaveLength(1);
   });
 });
