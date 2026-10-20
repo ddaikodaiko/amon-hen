@@ -1,0 +1,26 @@
+{
+ "description": "(h) The connection drops after the first tool call.",
+ "replies": [
+  {
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "tu_1",
+     "name": "get_track",
+     "input": {
+      "mmsi": 230000101,
+      "from": "2026-10-19T07:30:00Z",
+      "to": "2026-10-19T08:40:00Z"
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 1200,
+    "output_tokens": 60
+   }
+  },
+  {
+   "error": "connection"
+  }
+ ]
+}

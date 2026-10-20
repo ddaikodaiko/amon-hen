@@ -1,0 +1,66 @@
+{
+ "description": "(a) Track and neighbours in one turn, then a verdict citing both: steps 0 model, 1 get_track, 2 get_nearby, 3 model, 4 verdict.",
+ "replies": [
+  {
+   "content": [
+    {
+     "type": "text",
+     "text": "I will look at the track and the vessels around it."
+    },
+    {
+     "type": "tool_use",
+     "id": "tu_1",
+     "name": "get_track",
+     "input": {
+      "mmsi": 230000101,
+      "from": "2026-10-19T07:30:00Z",
+      "to": "2026-10-19T08:40:00Z"
+     }
+    },
+    {
+     "type": "tool_use",
+     "id": "tu_2",
+     "name": "get_nearby",
+     "input": {
+      "lat": 59.7,
+      "lon": 24.2,
+      "at": "2026-10-19T08:00:00Z",
+      "window_min": 25
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 1200,
+    "output_tokens": 90
+   }
+  },
+  {
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "tu_v",
+     "name": "submit_verdict",
+     "input": {
+      "verdict": "likely_dark",
+      "confidence": "medium",
+      "explanation": "Neighbours kept reporting and our ingest was up, so reception was not the problem.",
+      "evidence": [
+       {
+        "step": 1,
+        "claim": "Step 1 supports the verdict."
+       },
+       {
+        "step": 2,
+        "claim": "Step 2 supports the verdict."
+       }
+      ]
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 2600,
+    "output_tokens": 140
+   }
+  }
+ ]
+}

@@ -1,0 +1,61 @@
+{
+ "description": "(f) The higher profile, in a trace that already has steps 0-3: its steps start at 4.",
+ "replies": [
+  {
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "tu_1",
+     "name": "get_nearby",
+     "input": {
+      "lat": 59.7,
+      "lon": 24.2,
+      "at": "2026-10-19T08:00:00Z",
+      "window_min": 25
+     }
+    },
+    {
+     "type": "tool_use",
+     "id": "tu_2",
+     "name": "get_ingest_health",
+     "input": {
+      "from": "2026-10-19T07:39:00Z",
+      "to": "2026-10-19T08:25:00Z"
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 3000,
+    "output_tokens": 150
+   }
+  },
+  {
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "tu_v",
+     "name": "submit_verdict",
+     "input": {
+      "verdict": "likely_dark",
+      "confidence": "medium",
+      "explanation": "Neighbours kept reporting and our ingest was up, so reception was not the problem.",
+      "evidence": [
+       {
+        "step": 5,
+        "claim": "Step 5 supports the verdict."
+       },
+       {
+        "step": 6,
+        "claim": "Step 6 supports the verdict."
+       }
+      ]
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 5000,
+    "output_tokens": 250
+   }
+  }
+ ]
+}

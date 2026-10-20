@@ -1,0 +1,29 @@
+{
+ "description": "(c) The model ends without a verdict twice: one nudge, then the case is an error.",
+ "replies": [
+  {
+   "content": [
+    {
+     "type": "text",
+     "text": "This looks like a coverage gap."
+    }
+   ],
+   "usage": {
+    "input_tokens": 1200,
+    "output_tokens": 20
+   }
+  },
+  {
+   "content": [
+    {
+     "type": "text",
+     "text": "As I said, a coverage gap."
+    }
+   ],
+   "usage": {
+    "input_tokens": 1300,
+    "output_tokens": 20
+   }
+  }
+ ]
+}

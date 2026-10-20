@@ -1,0 +1,65 @@
+{
+ "description": "(b) The first get_track asks for 8 h and fails; the model fixes it and goes on.",
+ "replies": [
+  {
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "tu_1",
+     "name": "get_track",
+     "input": {
+      "mmsi": 230000101,
+      "from": "2026-10-19T00:30:00Z",
+      "to": "2026-10-19T08:40:00Z"
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 1200,
+    "output_tokens": 60
+   }
+  },
+  {
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "tu_2",
+     "name": "get_track",
+     "input": {
+      "mmsi": 230000101,
+      "from": "2026-10-19T07:30:00Z",
+      "to": "2026-10-19T08:40:00Z"
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 1500,
+    "output_tokens": 60
+   }
+  },
+  {
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "tu_v",
+     "name": "submit_verdict",
+     "input": {
+      "verdict": "coverage_gap",
+      "confidence": "medium",
+      "explanation": "Neighbours kept reporting and our ingest was up, so reception was not the problem.",
+      "evidence": [
+       {
+        "step": 3,
+        "claim": "Step 3 supports the verdict."
+       }
+      ]
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 2400,
+    "output_tokens": 120
+   }
+  }
+ ]
+}

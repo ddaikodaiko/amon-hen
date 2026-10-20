@@ -18,6 +18,7 @@ Fecha: 2026-10-19. Cada punto sigue el formato Decisión / Por qué / Alternativ
   - **El contexto por defecto es de 4.096 tokens** (lo dice `ollama ps`). Una investigación con rastros lo supera, y Ollama recorta sin avisar. Hay que subirlo, por ejemplo con `OLLAMA_CONTEXT_LENGTH=16384`, `OLLAMA_FLASH_ATTENTION=1` y `OLLAMA_KV_CACHE_TYPE=q8_0` para que quepa en 8 GB, y mantener compactas las salidas de las herramientas **[fijar en T031]**.
   - **El `usage.input_tokens` de Ollama solo cuenta lo que no reaprovecha de su caché** (en una llamada repetida dio 4 tokens). Por eso los tokens locales no se pueden comparar tal cual con los de la API de pago. La traza guarda el valor tal como llega, y el eval compara costes, no tokens.
   - **El modelo se inventa índices de paso** en `evidence`: citó los pasos 2 y 3, que no existían. La validación de `submit_verdict` contra la traza (R4) es imprescindible.
+- **Comprobado (2026-10-20):** con el PC apagado, una petición a Ollama por Tailscale se queda colgada en vez de fallar. Antes de cada investigación se prueba `GET /api/version` con 3 s de plazo (T021).
 
 ## R2. Modelo local: qwen3 8B como punto de partida, con una prueba de varios modelos
 

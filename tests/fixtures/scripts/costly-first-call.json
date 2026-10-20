@@ -1,0 +1,47 @@
+{
+ "description": "(i) A first paid call with heavy usage; the worst case of the second no longer fits under the cap.",
+ "replies": [
+  {
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "tu_1",
+     "name": "get_track",
+     "input": {
+      "mmsi": 230000101,
+      "from": "2026-10-19T07:30:00Z",
+      "to": "2026-10-19T08:40:00Z"
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 20000,
+    "output_tokens": 8000
+   }
+  },
+  {
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "tu_v",
+     "name": "submit_verdict",
+     "input": {
+      "verdict": "coverage_gap",
+      "confidence": "medium",
+      "explanation": "Neighbours kept reporting and our ingest was up, so reception was not the problem.",
+      "evidence": [
+       {
+        "step": 1,
+        "claim": "Step 1 supports the verdict."
+       }
+      ]
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 2000,
+    "output_tokens": 120
+   }
+  }
+ ]
+}

@@ -6,7 +6,7 @@
 | `bun run ingest` | Proceso 24/7: Digitraffic (MQTT) → SQLite + archivo crudo por horas + salud | Internet; no pide key |
 | `bun run ingest --from-archive <dir> [--from <ISO> --to <ISO>]` | Importa el archivo crudo a SQLite por el mismo camino que la ingesta en vivo. Sirve para trabajar sin la Pi | El archivo crudo |
 | `bun run server` | Panel, API, SSE, detector, cobertura y la cola del agente (modo `live`, o `public` con `VIGIA_MODE`) | La base de la ingesta. Para investigar: un perfil de modelo alcanzable |
-| `bun run investigate [--ids 1,2] [--all-pending] --profile local\|haiku\|sonnet` | Investiga esos candidatos, o todos los pendientes, con ese perfil (respetando el tope). Para desarrollar y para la prueba de modelos | La base; el perfil |
+| `bun run investigate [--ids 1,2] [--all-pending] --profile local\|haiku\|sonnet` | Pone al día el detector y la cobertura, y luego investiga esos candidatos, o todos los que esperan, por orden y con ese perfil (respetando el tope). Se para si el modelo no responde o no hay presupuesto. Para desarrollar y para la prueba de modelos | La base; el perfil |
 | `bun run eval [--profile local\|haiku\|sonnet]` | Con `--profile`, reinvestiga los casos etiquetados con ese perfil (respetando el tope). Sin él, usa el último expediente de cada caso. Guarda un informe | Etiquetas; el perfil, si se da |
 | `bun run brief [--date YYYY-MM-DD]` | Genera la parte determinista del brief y, si hay modelo, la narrativa | La base |
 | `bun run record --from <ISO> --to <ISO> --kind demo\|eval --out <ruta>` | Exporta una ventana a una base aparte; para la demo, reduce a una posición por minuto | La base y el archivo crudo |

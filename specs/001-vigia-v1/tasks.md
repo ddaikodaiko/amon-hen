@@ -159,7 +159,7 @@ description: "Tareas de Vigía v1, por historia de usuario"
   - con un `claim` de más de 160 caracteres.
 
   Y acepta uno válido.
-- [ ] T017 [P] [US1] [clase] Guiones del modelo de pega en `tests/fixtures/scripts/` (JSON: la lista de respuestas, con `content` y `usage`) y `tests/integration/agent-loop.test.ts` con `FakeClient`. Casos:
+- [x] T017 [P] [US1] [clase] Guiones del modelo de pega en `tests/fixtures/scripts/` (JSON: la lista de respuestas, con `content` y `usage`) y `tests/integration/agent-loop.test.ts` con `FakeClient`. Casos:
   - (a) camino feliz: expediente con al menos una prueba enlazada y la traza completa con tokens;
   - (b) una herramienta falla: el agente sigue y la traza guarda el error (FR-012);
   - (c) el modelo termina sin `submit_verdict`: recibe un aviso, y solo uno;
@@ -172,6 +172,7 @@ description: "Tareas de Vigía v1, por historia de usuario"
 
 ### Implementation for User Story 1
 
+  **Hecho (2026-10-20):** 11 guiones en `tests/fixtures/scripts/` y 12 pruebas, sobre los rastros sintéticos de T013: las herramientas del guion responden con posiciones de verdad. Comprobado que fallan si se cambian los límites del bucle.
 - [x] T018 [P] [US1] [clase] `src/coverage/compute.ts` (FR-004, R6):
   - interpola a 1 minuto el rastro de cada barco, incluidos los minutos de los gaps;
   - solo cuenta los minutos a más de 3 nudos (R6);
@@ -192,11 +193,12 @@ description: "Tareas de Vigía v1, por historia de usuario"
   - Recorre `[detect_scanned_until, horizonte)`, abierto por la derecha: el minuto que empieza en el horizonte sigue abierto. La prueba de "cada 10 min igual que una vez" encontró el fallo con el intervalo cerrado: un barco que reaparecía justo en el borde no cerraba su gap.
 
   **Sobre las 2 h grabadas el 2026-10-19** (en 146 ms): 702 gaps, 678 descartados (463 `own_outage` por el portátil apagado, 209 `berth` y 6 `left_region`) y 24 `pending`. De estos, 19 están en el extremo ruso (al este de 28° E), donde llegan mal las antenas finlandesas; 4 son gaps de barcos amarrados en Tallinn, cuyo puerto falta en `ports.geojson` (T005), y 1 está en mitad del golfo.
-- [ ] T021 [US1] [clase] Primero, leer `typescript/claude-api/README.md` y `tool-use.md` de la skill `claude-api`. Después, `src/agent/model.ts`:
+- [x] T021 [US1] [clase] Primero, leer `typescript/claude-api/README.md` y `tool-use.md` de la skill `claude-api`. Después, `src/agent/model.ts`:
   - la interfaz `ModelClient { create(params): Promise<Message> }`;
   - `AnthropicClient(profile)`, sobre `client.messages.create` (no la beta), con el `baseURL` del perfil. Para `local`, `apiKey: "ollama"`;
   - `FakeClient(script)`, que devuelve las respuestas del guion en orden y falla si se le pide una de más.
-- [ ] T022 [P] [US1] [clase] `src/agent/budget.ts`:
+  **Hecho (2026-10-20), con un añadido:** `unavailable()` en `ModelClient`. Con el PC apagado, la petición por Tailscale se queda colgada en vez de fallar (más de 200 s), así que antes de investigar se prueba `GET /api/version` de Ollama con 3 s de plazo. El perfil local manda `thinking: {type: "disabled"}` (Ollama solo admite `enabled` o `disabled`, R1); los de pago lo omiten, y los modelos 5.5 piensan de forma adaptativa.
+- [x] T022 [P] [US1] [clase] `src/agent/budget.ts`:
   - `costUsd(usage, profile)`, con los precios del perfil (0 en `local`);
   - `canSpend(db, profile, worstCaseUsd)`, contra lo gastado este mes en `budget` y `VIGIA_BUDGET_USD`. Se comprueba antes de cada llamada al modelo, con el peor caso: los tokens de entrada estimados y `max_tokens` de salida;
   - `record(db, cost)`.
@@ -212,33 +214,40 @@ description: "Tareas de Vigía v1, por historia de usuario"
   - El `input_schema` sale de `z.toJSONSchema`.
   - `strict: true` solo en los perfiles de Anthropic.
   - Si la entrada no valida, la ejecución devuelve `is_error` con el motivo.
-- [ ] T026 [P] [US1] [clase] `src/agent/prompts/system.md`, en inglés, según el resumen de `contracts/agent-tools.md`:
+- [x] T026 [P] [US1] [clase] `src/agent/prompts/system.md`, en inglés, según el resumen de `contracts/agent-tools.md`:
   - la hipótesis de partida es un hueco de cobertura;
   - para `likely_dark` hacen falta buena cobertura **y** vecinos que siguieron emitiendo;
   - hay que citar los pasos de la traza;
   - si hay `identity_conflicts`, no se concluye `coverage_gap` sin otra prueba, y si muchos vecinos también saltan, es interferencia GNSS;
   - nunca se buscan personas;
   - se termina siempre con `submit_verdict`.
-- [ ] T027 [US1] [bloque] `src/agent/loop.ts`, el bucle manual de R3:
+- [x] T027 [US1] [bloque] `src/agent/loop.ts`, el bucle manual de R3:
   - llama al modelo, ejecuta las herramientas, añade el `response.content` íntegro y repite;
   - `tool_choice: auto`;
   - límites: 10 herramientas, 1 aviso y 2 reintentos del veredicto;
   - un `trace_steps` por cada llamada al modelo y cada herramienta, con tokens, coste, duración y `output_summary`.
 
   Hace pasar T017 (a)-(e).
-- [ ] T028 [US1] [clase] `src/agent/investigate.ts`: candidato → bucle → escalado (FR-010).
+  **Hecho (2026-10-20). Decisiones:**
+  - La 11.ª herramienta no se ejecuta: vuelve un `is_error` que pide el veredicto con lo que hay. Si después pide otra herramienta, el caso queda en `error`.
+  - Una herramienta que falla queda como paso `error`. Solo se pueden citar los resultados de herramientas que salieron bien.
+  - Un error de conexión o un 5xx es "sin modelo"; un `refusal`, `error`.
+- [x] T028 [US1] [clase] `src/agent/investigate.ts`: candidato → bucle → escalado (FR-010).
   - En una sola transacción escribe `dossiers` (la versión siguiente), `evidence` y `trace_steps`.
   - `agent_version` es un hash de `system.md`, los esquemas y el perfil.
   - Si el cliente cae a mitad, no escribe nada.
 
   Hace pasar T017 (f)-(h).
-- [ ] T029 [US1] [clase] `src/agent/queue.ts`: la máquina de estados de `data-model.md` (`pending → investigating → investigated | error | pending_no_model | pending_budget`).
+  **Hecho (2026-10-20):** si el escalado no llega a veredicto (tope, modelo o límites), se queda el veredicto del perfil por defecto y la traza lo explica en un paso `error`. Un gap abierto se describe a la hora de la salud cerrada, no del reloj, para que las importaciones antiguas no digan "3 días callado".
+- [x] T029 [US1] [clase] `src/agent/queue.ts`: la máquina de estados de `data-model.md` (`pending → investigating → investigated | error | pending_no_model | pending_budget`).
   - Se atiende por orden de llegada (`trigger_at`).
   - Cada entrada en `investigating` escribe `trigger_at`.
   - Los casos en `error` se reintentan a mano.
 
   Pruebas en `tests/unit/queue.test.ts` con las transiciones válidas y las no válidas.
-- [ ] T030 [US1] [clase] `src/cli/investigate.ts`: `bun run investigate [--ids 1,2] [--all-pending] --profile local|haiku|sonnet`, para lanzar investigaciones sobre los datos importados. Ya está en `contracts/cli.md`.
+  **Hecho (2026-10-20):** `recoverInterrupted` devuelve a `pending_no_model` los casos que llevan más de 15 min en `investigating` (un proceso que murió a mitad). Con 15 min no toca la investigación en curso de otro proceso.
+- [x] T030 [US1] [clase] `src/cli/investigate.ts`: `bun run investigate [--ids 1,2] [--all-pending] --profile local|haiku|sonnet`, para lanzar investigaciones sobre los datos importados. Ya está en `contracts/cli.md`.
+  **Hecho (2026-10-20):** antes de investigar pone al día el detector y la cobertura (son idempotentes), porque sobre una importación no hay servidor que los ejecute. Si el modelo no responde o no hay presupuesto, se para. Sobre las 2 h grabadas, con el PC apagado: 24 candidatos listos y el primero en `pending_no_model` en 3 s.
 - [ ] T031 [US1] [bloque] Primera conexión real: con Ollama y `qwen3:8b` en el PC, por Tailscale, `bun run investigate` sobre 3 candidatos de la muestra de T002. Comprobar que, con el SDK, el `/v1/messages` de Ollama acepta `tools` y devuelve `tool_use` y `usage`. Anotar en `research.md` (R1) lo que no funcione. Necesita el PC.
 - [ ] T032 [US1] [bloque] `src/agent/tools/get_gfw_events.ts`:
   - `GET /v3/events` con `GFW_TOKEN`, sobre los datasets de gaps, encounters y loitering. Hay que comprobar sus nombres y el retraso de los datos (R9);

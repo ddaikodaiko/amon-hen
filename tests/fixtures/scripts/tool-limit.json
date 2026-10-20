@@ -1,0 +1,205 @@
+{
+ "description": "(e) Eleven get_vessel calls, one per turn: the 11th is not run, and the verdict after it is.",
+ "replies": [
+  {
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "tu_1",
+     "name": "get_vessel",
+     "input": {
+      "mmsi": 230000101
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 1100,
+    "output_tokens": 40
+   }
+  },
+  {
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "tu_2",
+     "name": "get_vessel",
+     "input": {
+      "mmsi": 230000101
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 1200,
+    "output_tokens": 40
+   }
+  },
+  {
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "tu_3",
+     "name": "get_vessel",
+     "input": {
+      "mmsi": 230000101
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 1300,
+    "output_tokens": 40
+   }
+  },
+  {
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "tu_4",
+     "name": "get_vessel",
+     "input": {
+      "mmsi": 230000101
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 1400,
+    "output_tokens": 40
+   }
+  },
+  {
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "tu_5",
+     "name": "get_vessel",
+     "input": {
+      "mmsi": 230000101
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 1500,
+    "output_tokens": 40
+   }
+  },
+  {
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "tu_6",
+     "name": "get_vessel",
+     "input": {
+      "mmsi": 230000101
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 1600,
+    "output_tokens": 40
+   }
+  },
+  {
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "tu_7",
+     "name": "get_vessel",
+     "input": {
+      "mmsi": 230000101
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 1700,
+    "output_tokens": 40
+   }
+  },
+  {
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "tu_8",
+     "name": "get_vessel",
+     "input": {
+      "mmsi": 230000101
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 1800,
+    "output_tokens": 40
+   }
+  },
+  {
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "tu_9",
+     "name": "get_vessel",
+     "input": {
+      "mmsi": 230000101
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 1900,
+    "output_tokens": 40
+   }
+  },
+  {
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "tu_10",
+     "name": "get_vessel",
+     "input": {
+      "mmsi": 230000101
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 2000,
+    "output_tokens": 40
+   }
+  },
+  {
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "tu_11",
+     "name": "get_vessel",
+     "input": {
+      "mmsi": 230000101
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 2100,
+    "output_tokens": 40
+   }
+  },
+  {
+   "content": [
+    {
+     "type": "tool_use",
+     "id": "tu_v",
+     "name": "submit_verdict",
+     "input": {
+      "verdict": "inconclusive",
+      "confidence": "low",
+      "explanation": "Neighbours kept reporting and our ingest was up, so reception was not the problem.",
+      "evidence": [
+       {
+        "step": 1,
+        "claim": "Step 1 supports the verdict."
+       }
+      ]
+     }
+    }
+   ],
+   "usage": {
+    "input_tokens": 2500,
+    "output_tokens": 100
+   }
+  }
+ ]
+}
