@@ -1,5 +1,6 @@
 import portsJson from "../../data/ports.geojson" with { type: "json" };
 import { REGION, type Region, THRESHOLDS } from "../config";
+import { retrigger } from "../agent/queue";
 import { type Database, getMeta, setMeta } from "../db";
 import { loadPorts, type Port } from "../geo/polygons";
 import { healthClosedUntil } from "../ingest/health";
@@ -26,6 +27,8 @@ export interface DetectorRun {
   created: number;
   discarded: number;
   triggered: number;
+  /** Investigated with the gap open, and back now: they go to the queue again for version + 1. */
+  reopened: number;
 }
 
 interface Waiting {
@@ -35,7 +38,7 @@ interface Waiting {
 }
 
 export function runDetector(db: Database, now: number, opts: DetectorOptions = {}): DetectorRun {
-  const run: DetectorRun = { created: 0, discarded: 0, triggered: 0 };
+  const run: DetectorRun = { created: 0, discarded: 0, triggered: 0, reopened: 0 };
   const closed = healthClosedUntil(db);
   if (closed === null) return run;
   const horizon = Math.min(now, closed);
@@ -52,8 +55,8 @@ export function runDetector(db: Database, now: number, opts: DetectorOptions = {
   const between = db.query<Fix, [number, number, number]>(
     "SELECT ts, lat, lon, sog, cog, nav_status FROM positions WHERE mmsi = ? AND ts >= ? AND ts < ? ORDER BY ts",
   );
-  const existing = db.query<{ id: number; gap_end: number | null }, [number, number]>(
-    "SELECT id, gap_end FROM candidates WHERE mmsi = ? AND gap_start = ?",
+  const existing = db.query<{ id: number; gap_end: number | null; state: string }, [number, number]>(
+    "SELECT id, gap_end, state FROM candidates WHERE mmsi = ? AND gap_start = ?",
   );
   const insert = db.query(
     `INSERT INTO candidates (mmsi, gap_start, gap_end, start_lat, start_lon, end_lat, end_lon, ais_class,
@@ -67,7 +70,15 @@ export function runDetector(db: Database, now: number, opts: DetectorOptions = {
   function record(mmsi: number, cls: AisClass, gap: Gap): void {
     const found = existing.get(mmsi, gap.start.ts);
     if (found !== null) {
-      if (found.gap_end === null && gap.end !== null) close.run(gap.end.ts, gap.end.lat, gap.end.lon, found.id);
+      if (found.gap_end === null && gap.end !== null) {
+        close.run(gap.end.ts, gap.end.lat, gap.end.lon, found.id);
+        // The agent saw it still silent (6 h trigger): it looks again with the reappearance. One
+        // under way now is looked at again once it is done.
+        if (found.state === "investigated" || found.state === "investigating") {
+          retrigger(db, found.id, now);
+          run.reopened++;
+        }
+      }
       return;
     }
     const reason = startExclusion(gap.start, ports, region);

@@ -131,6 +131,6 @@ describe("when the investigation is triggered", () => {
 
   test("with no ingest health at all, nothing is detected", () => {
     const db = openDb(":memory:");
-    expect(detect(END)(db)).toEqual({ created: 0, discarded: 0, triggered: 0 });
+    expect(detect(END)(db)).toEqual({ created: 0, discarded: 0, triggered: 0, reopened: 0 });
   });
 });

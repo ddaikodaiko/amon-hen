@@ -53,7 +53,8 @@ Todo se guarda en una base SQLite (`bun:sqlite`, modo WAL). Las horas son UTC en
 | ais_class, nav_status_start | | |
 | state | TEXT | ver los estados abajo |
 | discard_reason | TEXT NULL | `own_outage`, `left_region` o `berth` |
-| trigger_at | INTEGER NULL | cuándo se disparó la investigación |
+| trigger_at | INTEGER NULL | cuándo entró en la cola: el disparo del detector, una reaparición después del disparo de las 6 h o una petición desde el panel. Es su sitio en la cola: un intento sin modelo no lo cambia (FR-028) |
+| started_at | INTEGER NULL | cuándo empezó el último intento; sirve para saber si uno quedó cortado por un reinicio. Desde la versión 2 del esquema |
 | created_at | INTEGER | |
 
 ### dossiers: expedientes (FR-008, FR-011, FR-013)
@@ -117,6 +118,7 @@ Todo se guarda en una base SQLite (`bun:sqlite`, modo WAL). Las horas son UTC en
 ```
 detected ──► discarded                      (own_outage | left_region | berth)
 detected ──► pending ──► investigating ──► investigated
+             pending ──► pending_no_model   (el modelo ya se sabe caído: no se intenta)
                               │  ├──► error ─────────► investigating   (reintentar)
                               │  ├──► pending_no_model ─► investigating (el modelo vuelve; por orden de llegada)
                               │  └──► pending_budget ──► investigating  (mes nuevo o tope mayor)
@@ -124,7 +126,8 @@ investigated ──► investigating   (reaparece después de las 6 h, o reinves
 ```
 
 - `investigating` es una sola transacción lógica. Si el modelo se cae a mitad, ese intento se descarta y no queda un expediente a medias (caso límite de la spec).
-- Cada vez que se entra en `investigating` se escribe un `trigger_at`.
+- Cada vez que se entra en `investigating` se escribe `started_at`. `trigger_at` solo cambia con un disparo nuevo: el del detector, una reaparición (el caso sigue `investigated` hasta que el trabajador lo coge, porque `trigger_at > started_at`) o una petición desde el panel sobre un caso `investigated`, `error` o `pending_budget`.
+- La cola automática (`queued()`) es `pending`, `pending_no_model` y los `investigated` con un disparo posterior a su último intento, por `trigger_at`. Los `pending_budget` se pidieron con un perfil de pago, así que esperan a que se vuelvan a pedir.
 
 ## Reglas de validación
 

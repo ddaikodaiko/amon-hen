@@ -34,7 +34,10 @@ export interface CandidateSummary {
   end: Point | null;
   state: CandidateState;
   discard_reason: DiscardReason | null;
+  /** When it entered the queue: the trigger, a reappearance after it, or a request. */
   trigger_at: number | null;
+  /** When the last attempt began. */
+  started_at: number | null;
   /** The newest dossier, if there is one. */
   dossier: {
     version: number;
@@ -283,4 +286,26 @@ export interface EvalReport {
 export interface EvalReports {
   /** The newest first. */
   items: EvalReport[];
+}
+
+export interface OutageInfo {
+  start_ts: number;
+  /** Null while it lasts. */
+  end_ts: number | null;
+  cause: "no_messages" | "disconnected" | null;
+}
+
+/** GET /api/health?from=&to= */
+export interface HealthReport {
+  from: number;
+  to: number;
+  /** The health of every minute before this one is known; null before the ingest closed any. */
+  closed_until: number | null;
+  /** This many minutes in a row without messages, or disconnected, are an outage of our own. */
+  outage_after_min: number;
+  /** [minute_ts, msg_count, connected (1 or 0)] per closed minute, oldest first. */
+  minutes: [number, number, number][];
+  /** The ones that overlap [from, to), oldest first. */
+  outages: OutageInfo[];
+  totals: { minutes: number; down: number; messages: number };
 }

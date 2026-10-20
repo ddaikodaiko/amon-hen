@@ -6,6 +6,7 @@ import type {
   CandidateList,
   CandidateState,
   EvalReports,
+  HealthReport,
   LabelNext,
   LabelSaved,
   LabelValue,
@@ -78,4 +79,12 @@ export const api = {
       body: JSON.stringify({ candidate_id, value, note }),
     }),
   evalReports: (fetcher: Fetch = fetch) => request<EvalReports>(fetcher, "/api/eval/reports"),
+  /** Without `from`, the span before the last closed minute. */
+  health: (span: { from?: number; to?: number } = {}, fetcher: Fetch = fetch) => {
+    const q = new URLSearchParams();
+    if (span.from !== undefined) q.set("from", new Date(span.from).toISOString());
+    if (span.to !== undefined) q.set("to", new Date(span.to).toISOString());
+    const s = q.toString();
+    return request<HealthReport>(fetcher, `/api/health${s === "" ? "" : `?${s}`}`);
+  },
 };

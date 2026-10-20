@@ -21,7 +21,7 @@ En `replay` y `public`, el **servidor** responde 403 a todo lo marcado como ✎ 
 | `POST /api/labels` | `{candidate_id, value, note?}` | ✎ | 201 con la etiqueta, el último expediente (ya se puede revelar; `null` si no hay) y el progreso. `author` es el usuario del sistema. Una segunda etiqueta del mismo caso es un 409 `already_labeled`: ya no sería a ciegas |
 | `GET /api/coverage?hour=` | Celdas con tráfico y su `ratio`, para la capa del mapa: `[lat_min, lon_min, ratio, expected_min]` | | `hour` es la hora UTC (0-23); por defecto, la actual |
 | `GET /api/land` | `data/land.geojson`, el mapa base | | 404 mientras no exista: el mapa se pinta sin tierra |
-| `GET /api/health?from=&to=` | Minutos de ingesta y caídas | | |
+| `GET /api/health?from=&to=` | Minutos de ingesta (`[minute_ts, msg_count, connected]`), caídas que se solapan con la ventana, totales y `closed_until` | | Por defecto, las 24 h antes del último minuto cerrado. 7 días como mucho |
 | `GET /api/eval/reports` | Informes, el último primero, con sus métricas | | |
 | `GET /api/briefs` · `GET /api/briefs/:date` | Briefs | | |
 

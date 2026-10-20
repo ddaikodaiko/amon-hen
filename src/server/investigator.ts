@@ -28,6 +28,7 @@ export class SerialInvestigator implements Investigator {
     private readonly db: Database,
     private readonly config: Config,
     private readonly client: (p: Profile) => ModelClient = (p) => new AnthropicClient(p),
+    private readonly now: () => number = Date.now,
   ) {}
 
   enqueue(id: number, profile: ProfileName): number {
@@ -52,6 +53,7 @@ export class SerialInvestigator implements Investigator {
           escalate: escalate === null ? null : this.client(this.config.profiles[escalate]),
           profiles: this.config.profiles,
           capUsd: this.config.budgetUsd,
+          now: this.now,
         });
       } catch (err) {
         console.error(`investigation of candidate ${job.id} failed`, err);

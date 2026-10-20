@@ -1,13 +1,13 @@
 import { z } from "zod";
 import { monthOf, spentIn } from "../../agent/budget";
-import { type CandidateState, canTransition, STATES } from "../../agent/queue";
+import { type CandidateState, canTransition, retrigger, STATES } from "../../agent/queue";
 import { VERDICTS } from "../../agent/tools/submit_verdict";
 import { PROFILE_NAMES } from "../../config";
 import type { Database } from "../../db";
 import type * as Api from "../../shared/api";
 import { HttpError, readOptionalJson, type Route } from "../http";
 import { vesselInfo } from "./map";
-import { parse } from "./parse";
+import { instant, parse } from "./parse";
 
 export const PAGE_SIZE = 50;
 
@@ -19,16 +19,6 @@ type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : never) : never;
 const sameStates: Same<CandidateState, Api.CandidateState> = true;
 const sameVerdicts: Same<(typeof VERDICTS)[number], Api.VerdictValue> = true;
 void sameStates, sameVerdicts;
-
-/** An ISO date (2026-10-19, from midnight UTC) or date-time (Z assumed). */
-const instant = z
-  .string()
-  .regex(/^\d{4}-\d\d-\d\d(T\d\d:\d\d(:\d\d(\.\d+)?)?(Z|[+-]\d\d:\d\d)?)?$/, "an ISO 8601 date or date-time")
-  .transform((s, ctx) => {
-    const ts = Date.parse(s.length === 10 ? `${s}T00:00:00Z` : /Z|[+-]\d\d:\d\d$/.test(s) ? s : `${s}Z`);
-    if (Number.isNaN(ts)) ctx.addIssue({ code: "custom", message: "not a valid date" });
-    return ts;
-  });
 
 const ListQuery = z.object({
   state: z
@@ -56,6 +46,7 @@ interface Row {
   state: CandidateState;
   discard_reason: Api.DiscardReason | null;
   trigger_at: number | null;
+  started_at: number | null;
   nav_status_start: number | null;
   created_at: number;
   d_version: number | null;
@@ -89,6 +80,7 @@ function summary(r: Row): Api.CandidateSummary {
     state: r.state,
     discard_reason: r.discard_reason,
     trigger_at: r.trigger_at,
+    started_at: r.started_at,
     dossier:
       r.d_version === null
         ? null
@@ -188,6 +180,8 @@ const reinvestigate: Route = {
         throw new HttpError(409, "over_budget", `this month's cap of ${app.config.budgetUsd} USD is spent (${spent.toFixed(4)} USD)`);
       }
     }
+    // A case already past the queue is triggered again; one waiting in it keeps its place.
+    if (row.state === "investigated" || row.state === "error" || row.state === "pending_budget") retrigger(app.db, row.id);
     const position = app.investigator.enqueue(row.id, body.profile);
     const out: Api.Reinvestigation = { queued: true, profile: body.profile, position };
     return Response.json(out, { status: 202 });

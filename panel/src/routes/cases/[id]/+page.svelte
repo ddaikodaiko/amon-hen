@@ -66,13 +66,13 @@
   const canInvestigate = $derived(blocked === null);
   let queued = $state<string | null>(null);
   let failure = $state<string | null>(null);
-  let before: { trigger_at: number | null; versions: number } | null = null;
+  let before: { started_at: number | null; versions: number } | null = null;
 
   async function reinvestigate() {
     failure = null;
     try {
       const r = await api.reinvestigate(c.id, profile);
-      before = { trigger_at: c.trigger_at, versions: dossiers.length };
+      before = { started_at: c.started_at, versions: dossiers.length };
       queued = r.position === 1 ? "Queued: next." : `Queued: ${r.position - 1} ahead.`;
     } catch (err) {
       failure = err instanceof ApiError ? err.message : String(err);
@@ -88,7 +88,7 @@
   });
   $effect(() => {
     if (before === null) return;
-    const ran = dossiers.length > before.versions || (c.trigger_at !== before.trigger_at && c.state !== "investigating");
+    const ran = dossiers.length > before.versions || (c.started_at !== before.started_at && c.state !== "investigating");
     if (ran) {
       queued = null;
       before = null;

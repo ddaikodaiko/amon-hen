@@ -7,6 +7,7 @@ import { importArchive } from "../ingest/import";
 import { parseMessage } from "../ingest/parse";
 import { applyEvent, applyMessage, ingestRaw } from "../ingest/pipeline";
 import { RawArchive } from "../ingest/raw-archive";
+import { prune } from "../ingest/retention";
 
 function log(msg: string): void {
   console.log(`${new Date().toISOString()} ${msg}`);
@@ -47,7 +48,8 @@ if (args["from-archive"] !== undefined) {
   process.exit(0);
 }
 
-const archive = new RawArchive("data/raw");
+const RAW_ROOT = "data/raw";
+const archive = new RawArchive(RAW_ROOT);
 await archive.init();
 
 try {
@@ -113,6 +115,18 @@ const stream = connectStream({
 
 const flushTimer = setInterval(() => archive.flush(), 1_000);
 
+// 30 days of positions and raw archive, except the recorded windows: a minute after starting, then daily.
+async function retention(): Promise<void> {
+  try {
+    const p = await prune(db, RAW_ROOT, Date.now());
+    if (p.positions + p.files > 0) log(`retention: ${p.positions} positions and ${p.files} raw hour files older than 30 days removed`);
+  } catch (err) {
+    if (!stopping) log(`retention failed: ${String(err)}`);
+  }
+}
+const firstRetention = setTimeout(() => void retention(), 60_000);
+const retentionTimer = setInterval(() => void retention(), 24 * 3_600_000);
+
 const reportTimer = setInterval(() => {
   closeMinutes(db, Date.now());
   const mb = (archive.bytesWritten / 1e6).toFixed(1);
@@ -130,6 +144,8 @@ async function shutdown(signal: string): Promise<void> {
   stopping = true;
   clearInterval(flushTimer);
   clearInterval(reportTimer);
+  clearTimeout(firstRetention);
+  clearInterval(retentionTimer);
   stream.stop();
   archive.write({ t: Date.now(), ev: "close", detail: `shutdown (${signal})` });
   applyEvent(db, { kind: "close", ts: Date.now() });

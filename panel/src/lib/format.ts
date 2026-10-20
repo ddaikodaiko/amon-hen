@@ -46,7 +46,7 @@ export const STATE_HELP: Partial<Record<CandidateState, string>> = {
   investigating: "The agent is working on it now.",
   error: "The agent did not reach a valid verdict within its limits. It can be investigated again.",
   pending_no_model: "The model did not answer. The case is investigated when it comes back, in order of arrival.",
-  pending_budget: "Investigating it could go over this month's spending cap. It waits for a new month or a higher cap.",
+  pending_budget: "Investigating it could go over this month's spending cap. Ask again with the local profile, or with a paid one once there is budget (a new month or a higher cap).",
 };
 
 export const DISCARD_LABEL: Record<DiscardReason, string> = {

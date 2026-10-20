@@ -1,12 +1,13 @@
 import { Database } from "bun:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
+import startedAt from "./migrations/002-started-at.sql" with { type: "text" };
 import schemaV1 from "./schema.sql" with { type: "text" };
 
 export type { Database };
 
 /** One entry per schema version; index 0 takes the database from version 0 to 1. */
-const MIGRATIONS: string[] = [schemaV1];
+const MIGRATIONS: string[] = [schemaV1, startedAt];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
 

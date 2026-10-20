@@ -415,24 +415,43 @@ description: "Tareas de Vigía v1, por historia de usuario"
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T059 [P] [US4] [clase] `tests/integration/queue-live.test.ts`, con `FakeClient` y un comprobador del modelo de pega:
+- [x] T059 [P] [US4] [clase] `tests/integration/queue-live.test.ts`, con `FakeClient` y un comprobador del modelo de pega:
   - 12 h "apagado" con 30 candidatos: los 30 quedan en `pending_no_model`;
   - al "encender": se investigan los 30 en orden y no se pierde ninguno (SC-005);
   - un gap que reaparece después de las 6 h crea la versión 2 del expediente.
+  **Hecho (2026-10-20):** tres tests:
+  - 30 casos, insertados al revés que su orden de llegada, pasan 12 h con el PC apagado (720 ticks): quedan en `pending_no_model` sin ninguna llamada. Al encender, se investigan los 30 en orden y con su `trigger_at` intacto;
+  - el PC se apaga a mitad: el primero se investiga, los otros tres esperan y luego van en orden;
+  - 230000109 reaparece 7,5 h después: la versión 2 del expediente lleva "It reported again", y no se reinvestiga ningún otro caso.
 
 ### Implementation for User Story 4
 
-- [ ] T060 [US4] [clase] Ingesta en vivo a SQLite:
+- [x] T060 [US4] [clase] Ingesta en vivo a SQLite:
   - `src/cli/ingest.ts` pasa cada mensaje por `pipeline.ts`, además de archivarlo, y cierra los minutos con `health.ts` cada minuto;
   - retención de 30 días para `positions` y el archivo crudo: una vez al día borra lo antiguo, salvo las ventanas ya exportadas en `recordings`.
-- [ ] T061 [US4] [clase] `src/detect/run.ts`: cuando un barco reaparece después del disparo de las 6 h, se añaden `gap_end` y las posiciones finales, y se encola una reinvestigación (versión + 1).
-- [ ] T062 [US4] [clase] `src/server/jobs.ts`, los trabajos del modo `live`:
+  **Hecho (2026-10-20):** la ingesta a SQLite ya estaba hecha (`ingestRaw` y `closeMinutes` cada minuto). Falta la retención, que va en `src/ingest/retention.ts`:
+  - borra las posiciones en tandas de 50.000, devolviendo el bucle de eventos entre tandas, y los archivos horarios crudos que terminan antes del corte, más los días que se quedan vacíos;
+  - respeta las ventanas de `recordings`;
+  - la ingesta la lanza un minuto después de arrancar y luego cada 24 h.
+- [x] T061 [US4] [clase] `src/detect/run.ts`: cuando un barco reaparece después del disparo de las 6 h, se añaden `gap_end` y las posiciones finales, y se encola una reinvestigación (versión + 1).
+  **Hecho (2026-10-20):** al cerrar el gap de un caso `investigated` o `investigating`, el detector le pone un `trigger_at` nuevo (`retrigger`), y la cola automática lo coge porque `trigger_at > started_at`. Para eso hizo falta la **migración v2**, que añade `started_at`: antes, cada intento sin modelo reescribía `trigger_at` y el caso pasaba al final de la cola, rompiendo FR-028. La migración rellena `started_at` con el `trigger_at` viejo en los casos que ya pasaron de `pending`.
+- [x] T062 [US4] [clase] `src/server/jobs.ts`, los trabajos del modo `live`:
   - el detector, cada minuto;
   - la cobertura, cada hora;
   - un trabajador de la cola que, antes de cada caso, comprueba el modelo (`GET {VIGIA_LOCAL_URL}/api/version`, timeout de 3 s). Sin modelo, deja el caso en `pending_no_model` y vuelve a probar cada 2 min. Cuando el modelo vuelve, investiga por orden de llegada (FR-028).
+  **Hecho (2026-10-20):** `LiveJobs` hace un tick por minuto: el detector y luego el trabajador.
+  - Con el modelo disponible, el trabajador da toda la cola, por orden, al `SerialInvestigator` con el perfil `local`; el investigador ignora los casos que ya tiene.
+  - Sin modelo, pasa los `pending` a `pending_no_model` sin intentarlo. Eso necesitó la transición nueva `pending → pending_no_model`.
+  - `ModelStatus` prueba el modelo cada 2 min.
+  - La cobertura se recalcula cada hora en un **Worker** con su propia conexión: sobre 7 días bloquearía el servidor decenas de segundos en la Pi. En la copia real tarda 0,2 s y el hilo principal sigue respondiendo.
 
   Hace pasar T059.
-- [ ] T063 [P] [US4] [clase] `GET /api/health?from=&to=` y `panel/src/routes/health/+page.svelte`: los mensajes por minuto, las caídas y el estado de la conexión (FR-017).
+- [x] T063 [P] [US4] [clase] `GET /api/health?from=&to=` y `panel/src/routes/health/+page.svelte`: los mensajes por minuto, las caídas y el estado de la conexión (FR-017).
+  **Hecho (2026-10-20):**
+  - Vistas de 6 h, 24 h y 7 días, terminando en el último minuto cerrado. La gráfica de mensajes por minuto agrupa en barras de varios minutos si pasan de 720, marca las caídas en rojo y enseña el valor al pasar el ratón.
+  - Arriba, el estado: conectado, en caída desde X, o "no cierra minutos" si en `live` el último minuto cerrado tiene más de 3 min (¿está corriendo `bun run ingest`?).
+  - Debajo, los totales y la tabla de caídas.
+  - Comprobado sobre la copia real: sale el hueco de la noche (12 h 21 min).
 - [ ] T064 [US4] [bloque] Desplegar en la Pi:
   - Bun, el repo y el `.env`;
   - `deploy/vigia-ingest.service`, actualizado, y `deploy/vigia-server.service` (modo `live`, `Restart=always`);
