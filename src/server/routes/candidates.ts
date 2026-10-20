@@ -4,10 +4,10 @@ import { type CandidateState, canTransition, STATES } from "../../agent/queue";
 import { VERDICTS } from "../../agent/tools/submit_verdict";
 import { PROFILE_NAMES } from "../../config";
 import type { Database } from "../../db";
-import { flagOf } from "../../geo/mid";
-import { shipTypeLabel } from "../../geo/ship-type";
 import type * as Api from "../../shared/api";
 import { HttpError, readOptionalJson, type Route } from "../http";
+import { vesselInfo } from "./map";
+import { parse } from "./parse";
 
 export const PAGE_SIZE = 50;
 
@@ -41,12 +41,6 @@ const ListQuery = z.object({
   to: instant.optional(),
   page: z.coerce.number().int().min(1).default(1),
 });
-
-function parse<S extends z.ZodType>(schema: S, value: unknown, what: string): z.output<S> {
-  const r = schema.safeParse(value);
-  if (!r.success) throw new HttpError(400, "invalid_request", `invalid ${what}: ${z.prettifyError(r.error)}`);
-  return r.data;
-}
 
 interface Row {
   id: number;
@@ -146,11 +140,7 @@ const detail: Route = {
   path: "/api/candidates/:id",
   handler: ({ params, app }) => {
     const row = candidateRow(app.db, params.id);
-    const v = app.db
-      .query<{ name: string | null; callsign: string | null; imo: number | null; ship_type: number | null; length_m: number | null }, [number]>(
-        "SELECT name, callsign, imo, ship_type, length_m FROM vessels WHERE mmsi = ?",
-      )
-      .get(row.mmsi)!;
+    const vessel = vesselInfo(app.db, row.mmsi)!;
     const evidence = app.db.query<Api.Evidence, [number]>("SELECT step_idx AS step, claim FROM evidence WHERE dossier_id = ? ORDER BY rowid");
     const steps = app.db.query<Api.TraceStep, [number]>(
       `SELECT idx, kind, tool, input_json, output_summary, output_json, model, input_tokens, output_tokens, cost_usd, duration_ms, ts
@@ -169,14 +159,7 @@ const detail: Route = {
         ...summary(row),
         nav_status_start: row.nav_status_start,
         created_at: row.created_at,
-        vessel: {
-          name: v.name,
-          flag: flagOf(row.mmsi),
-          type_label: shipTypeLabel(v.ship_type),
-          callsign: v.callsign,
-          imo: v.imo,
-          length_m: v.length_m,
-        },
+        vessel,
       },
       dossiers,
     };

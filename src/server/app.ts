@@ -2,6 +2,8 @@ import { existsSync, statSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
 import { type AppContext, errorResponse, HttpError, matchPath, type Route } from "./http";
 import { CANDIDATE_ROUTES } from "./routes/candidates";
+import { MAP_ROUTES } from "./routes/map";
+import { streamRoute } from "./stream";
 
 export const NOTICE = "Educational project, no warranty";
 export const ATTRIBUTION = "Source: Fintraffic / digitraffic.fi, CC BY 4.0";
@@ -24,7 +26,7 @@ const metaRoute: Route = {
   },
 };
 
-export const ROUTES: Route[] = [metaRoute, ...CANDIDATE_ROUTES];
+export const ROUTES: Route[] = [metaRoute, streamRoute, ...CANDIDATE_ROUTES, ...MAP_ROUTES];
 
 export interface AppOptions {
   /** Built panel (panel/build). Missing → the API still works. */
@@ -34,7 +36,6 @@ export interface AppOptions {
 
 function guard(route: Route, app: AppContext): void {
   if (!route.write || app.mode === "live") return;
-  if (app.mode === "replay" && route.allowInReplay) return;
   throw new HttpError(403, "read_only", `${route.method} ${route.path} is not allowed in ${app.mode} mode`);
 }
 

@@ -8,13 +8,6 @@ import { createApp, ROUTES } from "../../src/server/app";
 import type { Route } from "../../src/server/http";
 
 const writeRoute: Route = { method: "POST", path: "/api/test-write", write: true, handler: () => Response.json({ ok: true }) };
-const speedRoute: Route = {
-  method: "POST",
-  path: "/api/replay/speed",
-  write: true,
-  allowInReplay: true,
-  handler: () => Response.json({ ok: true }),
-};
 const paramRoute: Route = {
   method: "GET",
   path: "/api/things/:id",
@@ -30,7 +23,7 @@ afterAll(() => rmSync(panelDir, { recursive: true, force: true }));
 function app(mode: Mode) {
   return createApp(
     { db: openDb(":memory:"), config: loadConfig({ VIGIA_BUDGET_USD: "5" }), mode, modelAvailable: () => null },
-    { panelDir, routes: [...ROUTES, writeRoute, speedRoute, paramRoute] },
+    { panelDir, routes: [...ROUTES, writeRoute, paramRoute] },
   );
 }
 
@@ -45,11 +38,6 @@ describe("mode guard", () => {
       expect(res.status).toBe(403);
       expect(((await res.json()) as { error: { code: string } }).error.code).toBe("read_only");
     }
-  });
-
-  test("replay may change its own speed; public may not", async () => {
-    expect((await call("replay", "POST", "/api/replay/speed")).status).toBe(200);
-    expect((await call("public", "POST", "/api/replay/speed")).status).toBe(403);
   });
 });
 

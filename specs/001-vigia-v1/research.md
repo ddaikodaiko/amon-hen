@@ -151,7 +151,7 @@ Fecha: 2026-10-19. Cada punto sigue el formato Decisión / Por qué / Alternativ
 
 ## R13. Modo público y seguridad
 
-- **Decisión:** con `VIGIA_MODE=public`, el **servidor** rechaza con 403 todo lo que escribe o gasta: etiquetas, reinvestigar, eval. No basta con ocultar los botones. En la demo (`replay`) solo se permite cambiar la velocidad del replay. Los secretos (`GFW_TOKEN`, `ANTHROPIC_API_KEY`) van solo en `.env`, fuera del repo.
+- **Decisión:** con `VIGIA_MODE=public`, el **servidor** rechaza con 403 todo lo que escribe o gasta: etiquetas, reinvestigar, eval. No basta con ocultar los botones. La demo (`replay`) también es de solo lectura: cada visitante tiene su propio reloj de replay en su conexión SSE, así que cambiar la velocidad no escribe nada ni afecta a los demás (decidido en T041). Los secretos (`GFW_TOKEN`, `ANTHROPIC_API_KEY`) van solo en `.env`, fuera del repo.
 - **Por qué:** FR-026 y principio V. Nadie de fuera puede gastar presupuesto.
 
 ## R14. Pruebas

@@ -292,17 +292,23 @@ description: "Tareas de Vigía v1, por historia de usuario"
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T037 [P] [US2] [clase] `tests/unit/replay-clock.test.ts`: a 60×, un minuto de datos pasa en 1 s, y cambiar de velocidad no hace saltar el reloj.
+- [x] T037 [P] [US2] [clase] `tests/unit/replay-clock.test.ts`: a 60×, un minuto de datos pasa en 1 s, y cambiar de velocidad no hace saltar el reloj.
 - [ ] T038 [P] [US2] [clase] `tests/integration/record.test.ts`: `record --kind demo` sobre las fixtures deja una posición por barco y minuto, y conserva los candidatos, los expedientes y las trazas de la ventana.
 
 ### Implementation for User Story 2
 
 - [ ] T039 [P] [US2] [clase] `data/land.geojson`: los polígonos de tierra de OSM (los simplificados de osmdata.openstreetmap.de), recortados a la región con margen y simplificados con `bunx mapshaper`, que es una herramienta de desarrollo y no una dependencia. Como mucho 3 MB. La atribución ODbL va en `data/README.md`.
-- [ ] T040 [US2] [clase] `src/replay/clock.ts`: el reloj del replay, con velocidades 1, 10, 60 y 300, sobre el rango de tiempo de la base. Da la hora actual del replay y las posiciones de cada tic. Hace pasar T037.
-- [ ] T041 [US2] [clase] `src/server/stream.ts`:
+- [x] T040 [US2] [clase] `src/replay/clock.ts`: el reloj del replay, con velocidades 1, 10, 60 y 300, sobre el rango de tiempo de la base. Da la hora actual del replay y las posiciones de cada tic. Hace pasar T037.
+  **Hecho (2026-10-20):** al final de la grabación vuelve a empezar. `positionsAt` da la última posición de cada barco oído en los 10 min anteriores: uno callado más tiempo sale del mapa y queda su marca de gap.
+- [x] T041 [US2] [clase] `src/server/stream.ts`:
   - `GET /api/stream` (SSE), con los eventos `positions` a 1 Hz (la última posición de cada barco), `candidate`, `dossier` y `health`. En `replay` sigue el reloj de T040, y en `live`, la hora real;
   - `POST /api/replay/speed`, solo en `replay`.
-- [ ] T042 [P] [US2] [clase] `src/server/routes/map.ts`: `GET /api/coverage?hour=` y `GET /api/vessels/:mmsi`.
+  **Hecho (2026-10-20), con un cambio:** cada conexión tiene su propio reloj de replay (`/api/stream?at=&speed=`) y no hay `POST /api/replay/speed`: para cambiar de velocidad, el panel se reconecta en la hora que muestra. Así un visitante de la demo pública no cambia la velocidad de los demás, y `replay` queda de solo lectura del todo (R13 actualizado). Otros detalles:
+  - En replay, un gap aparece cuando el detector lo habría marcado (inicio + umbral) y su veredicto cuando habría saltado la investigación (reaparición o 6 h). Las horas reales de la base no sirven: las de una importación son las del día en que se importó.
+  - Eventos añadidos: `hello` al conectar y `reset` cuando el replay vuelve a empezar.
+  - La lógica de cada tic está en `StreamSession`, sin HTTP, y se prueba con un reloj de pega (`tests/integration/stream.test.ts`).
+- [x] T042 [P] [US2] [clase] `src/server/routes/map.ts`: `GET /api/coverage?hour=` y `GET /api/vessels/:mmsi`.
+  **Hecho (2026-10-20):** la cobertura va compacta (`[lat_min, lon_min, ratio, expected_min]` por celda con tráfico), y `/api/vessels/:mmsi` admite `?at=` para que el rastro siga al reloj del replay.
 - [ ] T043 [US2] [clase] `panel/src/routes/+page.svelte` y `panel/src/lib/map/` (FR-014):
   - MapLibre con un estilo local: fondo de mar y `land.geojson`, sin teselas remotas;
   - la capa de barcos, desde el SSE, y el rastro del barco seleccionado;

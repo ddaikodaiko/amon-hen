@@ -25,8 +25,6 @@ export interface Route {
   path: string;
   /** ✎ in contracts/http-api.md: changes state, so it is refused in replay and public. */
   write?: boolean;
-  /** A write that replay still allows (only the replay speed). */
-  allowInReplay?: boolean;
   handler: (ctx: RequestContext) => Response | Promise<Response>;
 }
 

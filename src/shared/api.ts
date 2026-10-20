@@ -53,13 +53,16 @@ export interface CandidateList {
   page_size: number;
 }
 
+/** What a vessel says about itself in its AIS static data, and its flag from the MMSI. */
 export interface VesselInfo {
   name: string | null;
   flag: string | null;
   type_label: string | null;
+  ais_class: "A" | "B";
   callsign: string | null;
   imo: number | null;
   length_m: number | null;
+  destination: string | null;
 }
 
 export interface TraceStep {
@@ -125,4 +128,47 @@ export interface Meta {
 
 export interface ApiError {
   error: { code: string; message: string };
+}
+
+// GET /api/stream (SSE). In replay each viewer has their own clock: `?at=<ms>&speed=1|10|60|300`;
+// to change speed the panel reconnects at the time it is showing.
+
+/** [mmsi, lat, lon, sog, cog] */
+export type VesselTick = [number, number, number, number | null, number | null];
+
+export interface StreamEvents {
+  /** First event of a connection. `range` and `speed` only in replay. */
+  hello: { mode: Meta["mode"]; t: number; range: { start: number; end: number } | null; speed: number | null };
+  /** Every second: the last position of each vessel heard from in the last 10 minutes. */
+  positions: { t: number; vessels: VesselTick[] };
+  /** A gap the detector flagged, where the vessel went silent. */
+  candidate: { id: number; mmsi: number; lat: number; lon: number; gap_start: number };
+  /** The verdict of a case: its newest dossier. */
+  dossier: { candidate_id: number; version: number; verdict: VerdictValue; confidence: Confidence };
+  /** Each closed ingest minute. */
+  health: { minute: number; connected: boolean; msg_count: number };
+  /** The replay went back to the start: drop the marks drawn so far. */
+  reset: { t: number };
+}
+
+/** GET /api/coverage?hour= */
+export interface CoverageLayer {
+  hour: number;
+  /** The 7 days the ratios come from; null before the first computation. */
+  window: { start: number; end: number } | null;
+  cell_deg: number;
+  /** Cells with fewer expected minutes than this are too thin to judge. */
+  sample_min: number;
+  /** [lat_min, lon_min, ratio, expected_min]: the south-west corner of each cell with traffic. */
+  cells: [number, number, number, number][];
+}
+
+/** [ts, lat, lon] */
+export type TrackPoint = [number, number, number];
+
+/** GET /api/vessels/:mmsi?at=&hours= */
+export interface VesselDetail extends VesselInfo {
+  mmsi: number;
+  /** The positions of the `hours` before `at`, oldest first. */
+  track: TrackPoint[];
 }
