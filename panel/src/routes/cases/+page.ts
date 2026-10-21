@@ -5,8 +5,11 @@ import type { PageLoad } from "./$types";
 
 const DAY = /^\d{4}-\d\d-\d\d$/;
 
-/** The quick filters over the list, and how many alerts each one holds in the chosen dates. */
-export const PRESETS: { key: string; label: string; filters: Pick<CandidateFilters, "state" | "verdict"> }[] = [
+/**
+ * The quick filters over the list, and how many alerts each one holds in the chosen dates. The
+ * underscore: a route module may export only SvelteKit's own names and those that start with one.
+ */
+export const _PRESETS: { key: string; label: string; filters: Pick<CandidateFilters, "state" | "verdict"> }[] = [
   { key: "all", label: "All", filters: {} },
   { key: "dark", label: "Suspicious", filters: { verdict: "likely_dark" } },
   { key: "unclear", label: "Unclear", filters: { verdict: "inconclusive" } },
@@ -36,9 +39,9 @@ export const load: PageLoad = async ({ url, fetch }) => {
     const dates = { from: filters.from, to: filters.to };
     const [list, ...totals] = await Promise.all([
       api.candidates(filters, fetch),
-      ...PRESETS.map((p) => api.candidates({ ...dates, ...p.filters }, fetch).then((l) => l.total)),
+      ..._PRESETS.map((p) => api.candidates({ ...dates, ...p.filters }, fetch).then((l) => l.total)),
     ]);
-    return { filters, list, counts: Object.fromEntries(PRESETS.map((p, i) => [p.key, totals[i]!])) };
+    return { filters, list, counts: Object.fromEntries(_PRESETS.map((p, i) => [p.key, totals[i]!])) };
   } catch (err) {
     if (err instanceof ApiError) error(err.status, err.message);
     throw err;

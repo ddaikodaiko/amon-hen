@@ -1,4 +1,4 @@
-import type { CandidateState, CandidateSummary, Confidence, DiscardReason, Interval, LabelValue, Near, VerdictValue } from "./api";
+import type { CandidateState, CandidateSummary, Confidence, DiscardReason, Interval, LabelValue, Near, ProfileName, VerdictValue } from "./api";
 
 // How the panel words and formats things, for someone who knows nothing about ships or AIS.
 // Times are shown in UTC, as the data is.
@@ -43,6 +43,8 @@ export const NAV_STATUS: Record<number, string> = {
   8: "under way sailing",
 };
 
+export const PROFILE_LABEL: Record<ProfileName, string> = { local: "Local model (free)", haiku: "Claude Haiku", sonnet: "Claude Sonnet" };
+
 export const CONFIDENCE_LABEL: Record<Confidence, string> = { high: "high", medium: "medium", low: "low" };
 
 export const STATE_LABEL: Record<CandidateState, string> = {
@@ -69,6 +71,13 @@ export const DISCARD_LABEL: Record<DiscardReason, string> = {
   own_outage: "our own feed was down",
   left_region: "it was leaving the area",
   berth: "it was in port",
+};
+
+/** The same, after a count: "3 in port". */
+export const DISCARD_SHORT: Record<DiscardReason, string> = {
+  own_outage: "while our feed was down",
+  left_region: "leaving the area",
+  berth: "in port",
 };
 
 export const COUNTRY: Record<Near["country"], string> = { FI: "Finland", EE: "Estonia", RU: "Russia" };

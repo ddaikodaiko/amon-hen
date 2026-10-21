@@ -2,7 +2,7 @@
   import { goto } from "$app/navigation";
   import { candidatesQuery, type CandidateFilters } from "#lib/api.ts";
   import { ago, alertStatus, minutes, placeText, vesselLine, when } from "#lib/format.ts";
-  import { PRESETS } from "./+page.ts";
+  import { _PRESETS } from "./+page.ts";
   import type { PageProps } from "./$types";
 
   let { data }: PageProps = $props();
@@ -14,7 +14,7 @@
   }
 
   const same = (a: CandidateFilters["state"], b: CandidateFilters["state"]) => (a ?? []).join() === (b ?? []).join();
-  const preset = $derived(PRESETS.find((p) => p.filters.verdict === filters.verdict && same(p.filters.state, filters.state))?.key ?? null);
+  const preset = $derived(_PRESETS.find((p) => p.filters.verdict === filters.verdict && same(p.filters.state, filters.state))?.key ?? null);
 
   const first = $derived((list.page - 1) * list.page_size + 1);
   const last = $derived(first + list.items.length - 1);
@@ -33,7 +33,7 @@
 
 <div class="toolbar">
   <div class="presets" role="group" aria-label="Show">
-    {#each PRESETS as p (p.key)}
+    {#each _PRESETS as p (p.key)}
       <button
         type="button"
         class="preset {p.key}"

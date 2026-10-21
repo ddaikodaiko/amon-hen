@@ -323,7 +323,7 @@
       <div class="panel-body">
         {#if vessel}
           <h2>{vessel.name ?? "Unnamed ship"}</h2>
-          <p class="muted">{vesselLine(vessel)}{#if vessel.length_m} · {vessel.length_m} m{/if}</p>
+          <p class="muted">{vesselLine(vessel)}{#if vessel.length_m}{" · "}{vessel.length_m} m{/if}</p>
           {#if tick}
             <p>
               {#if tick[3] !== null && tick[3] >= 0.5}

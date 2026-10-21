@@ -12,6 +12,7 @@
     ms,
     placeText,
     prettyJson,
+    PROFILE_LABEL,
     STATE_HELP,
     tokens,
     usd,
@@ -71,7 +72,6 @@
     return s.tool ?? "Tool call";
   }
 
-  const PROFILE_LABEL: Record<ProfileName, string> = { local: "Local model (free)", haiku: "Claude Haiku", sonnet: "Claude Sonnet" };
   let profile = $state<ProfileName>("local");
   // Why the button is off, in words that say what is missing (scenario 3 of US2, FR-026).
   const blocked = $derived.by((): string | null => {
@@ -136,10 +136,10 @@
   <div>
     <h1>{c.name ?? "Unnamed ship"}</h1>
     <p class="who">
-      {vesselLine(c.vessel)}{#if c.vessel.length_m} · {c.vessel.length_m} m long{/if}{#if c.vessel.destination} · bound for {c.vessel.destination}{/if}
+      {vesselLine(c.vessel)}{#if c.vessel.length_m}{" · "}{c.vessel.length_m} m long{/if}{#if c.vessel.destination}{" · "}bound for {c.vessel.destination}{/if}
     </p>
     <p class="ids mono muted">
-      MMSI {c.mmsi}{#if c.vessel.imo} · IMO {c.vessel.imo}{/if}{#if c.vessel.callsign} · call sign {c.vessel.callsign}{/if}
+      MMSI {c.mmsi}{#if c.vessel.imo}{" · "}IMO {c.vessel.imo}{/if}{#if c.vessel.callsign}{" · "}call sign {c.vessel.callsign}{/if}
     </p>
   </div>
   <span class="pill big sev-{status.tone}">{status.text}</span>
