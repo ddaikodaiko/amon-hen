@@ -5,7 +5,7 @@ What is in this folder, where it comes from and under which licence.
 | File | What | Source | Licence |
 |---|---|---|---|
 | `region.json` | The Gulf of Finland box the whole project works in | Our own | MIT, as the code |
-| `ports.geojson` | Berths, quays and harbour basins, grown 150 m towards the water. The detector drops gaps that start inside them | OpenStreetMap, through Overpass: `bun run scripts/ports-from-osm.ts` | © OpenStreetMap contributors, [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/) |
+| `ports.geojson` | Berths, quays, harbour basins, and industrial or port areas on the sea coast, grown 150 m towards the water and merged where they overlap. The detector drops gaps that start inside them | OpenStreetMap, through Overpass: `bun run scripts/ports-from-osm.ts --cache data/raw/overpass` (it runs `bunx mapshaper` for the merge) | © OpenStreetMap contributors, [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/) |
 | `land.geojson` | The land of the base map: OSM's simplified land polygons, clipped to the region with a margin. Data of 2026-10-20, 600 KB. How it was made is below | [`simplified-land-polygons-complete-3857.zip`](https://osmdata.openstreetmap.de/data/land-polygons.html) from osmdata.openstreetmap.de | © OpenStreetMap contributors, ODbL 1.0 |
 | `vigia.sqlite`, `raw/` | What the recorder stores: positions, health, candidates, dossiers, and the raw messages by hour. Not in the repository | Digitraffic marine AIS, by Fintraffic | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 

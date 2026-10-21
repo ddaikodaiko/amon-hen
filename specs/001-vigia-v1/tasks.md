@@ -62,7 +62,7 @@ description: "Tareas de Vigía v1, por historia de usuario"
 
   **Hecho:** `bun run --cwd panel build` genera `panel/build`.
   **Hecho (2026-10-19), con SvelteKit 3.1:** la configuración va en `vite.config.ts` (ya no hay `svelte.config.js`), el `tsconfig` extiende `$app/tsconfig` y el panel usa TypeScript 6, porque SvelteKit 3 aún no admite el 7 (la raíz sí lo usa). Las vistas son marcadores hasta sus tareas.
-- [ ] T005 [P] [clase] Crear dos archivos de datos:
+- [x] T005 [P] [clase] Crear dos archivos de datos:
   - `data/region.json`: la caja de la región de Assumptions, más `border_margin_nm: 2`;
   - `data/ports.geojson`: polígonos de las dársenas y los amarres de Helsinki (Eteläsatama, Länsisatama, Vuosaari), Porvoo-Sköldvik, Loviisa, Kotka-Hamina (Mussalo, Hietanen), Tallinn (Vanasadam, Muuga, Paljassaare), Paldiski, Sillamäe, Ust-Luga, Primorsk, Vysotsk y San Petersburgo, dibujados a mano (geojson.io), cada uno con `properties.name` y `kind: "berth"`. Sin fondeaderos (clarificación 3).
   **Estado (2026-10-19):** `data/region.json` está hecho. `data/ports.geojson` es un **borrador**, generado desde OSM con `scripts/ports-from-osm.ts`: 177 polígonos (zonas portuarias e industriales, más los muelles de Primorsk y Vysotsk), ampliados 150 m hacia el agua. Medido contra los barcos parados de la primera hora:
@@ -72,6 +72,16 @@ description: "Tareas de Vigía v1, por historia de usuario"
   - Los datos derivados de OSM van con licencia ODbL y la atribución dentro del archivo.
 
   **Estado (2026-10-20):** el script ya pide el golfo en 8 franjas de 1° con reintentos (15, 30, 60 y 120 s), pero Overpass da 502 incluso a la primera franja; solo responde a consultas pequeñas (la caja de Tallinn sí). Medido el borrador sobre las 2 h grabadas: 65 de 119 amarrados dentro, y 1 de 77 fondeados dentro por error (Lugaport). Los amarrados que faltan se agrupan en los muelles urbanos de Helsinki (60,16-60,18 N, 24,92-25,00 E; 17 barcos) y en Tallinn (59,46 N, 24,64-24,72 E; 9 barcos), y producen candidatos falsos en el detector (T020). Algunos "amarrados" están en mitad del mar (fondeados que no cambiaron el estado), así que el 100 % no es el objetivo.
+
+  **Hecho (2026-10-21):** `ports.geojson` sale ya del script completo, sin retoques a mano.
+  - **Caché:** `--cache data/raw/overpass` guarda cada respuesta, así que una caída de Overpass a media descarga no obliga a repetir lo ya bajado. Desde la caché, el script tarda unos 12 s.
+  - **Zonas industriales en la costa:** además de muelles, dársenas y marinas, entran las áreas `landuse=industrial|port|wharf`, `industrial=*` y las dársenas de la carta náutica que tienen el mar a menos de 500 m. Así entran astilleros y terminales que OSM no etiqueta como puerto (BLRT en Kopli, Bronka, Lomonosov, Ust-Luga, la terminal de carbón de Muuga) y quedan fuera las de interior y las de los lagos (8.379 piezas). La prueba de costa se hace en local con `land.geojson`, porque Overpass no devuelve nada si se le pide `around` sobre la costa de una franja entera. Sustituye la consulta especial de Primorsk y Vysotsk, que ya no añadía nada.
+  - **Fusión:** los polígonos que se solapan se unen en uno (mapshaper, como en `land.geojson`), se rellenan las dársenas cerradas por muelles y se simplifica a 25 m. Quedan 2.603 polígonos y 1,3 MB, en lugar de 12.043 y 10 MB. Cada relación va miembro a miembro, para que el casco de partes separadas no tape el agua que hay entre ellas.
+  - **Medido sobre las 25 h grabadas** (19 y 20 de octubre), con el último fix parado de cada barco: 209 de 224 amarrados dentro (con el borrador eran 143) y 6 de 135 fondeados dentro por error (antes, 4). De los 155 casos no descartados, 50 empezarían hoy en un amarre: 35 de los 55 que empezaron "amarrados" y 15 de barcos parados en puerto que declaraban otro estado (remolcadores, prácticos y un frigorífico fondeado junto a Bronka). Solo el 0,45 % del área de los 59 fondeaderos de la carta náutica cae dentro de un amarre: son los bordes de cuatro fondeaderos pegados a una terminal.
+  - **Los 15 amarrados que siguen fuera:** casi todos son fondeados que se declaran amarrados (en el fondeadero de San Petersburgo, en mar abierto o en la bahía de Ust-Luga), así que está bien que queden fuera. La excepción es una fila de 5 barcos, 3 de ellos rompehielos de Rosmorport, en el canal marítimo de San Petersburgo (59,913 N, 30,24 E), a 190 m o más del muelle más cercano de OSM. De ahí salen 13 de los 20 casos "amarrados" que quedan. **Pendiente de Marcos:** mirarlo en un mapa; si es un amarre, se añade a mano.
+  - No ha hecho falta la regla "parado y cerca de tierra": los muelles urbanos de Helsinki y Tallinn ya quedan dentro.
+  - Los candidatos ya creados no se reclasifican, porque el detector solo descarta al crear. El archivo nuevo vale para lo que se detecte a partir de ahora.
+  - Overpass: uno de los servidores públicos contesta a veces sin elementos y sin error. El script trata una respuesta vacía como un fallo y la reintenta.
 
 ---
 

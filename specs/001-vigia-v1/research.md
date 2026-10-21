@@ -115,6 +115,7 @@ Fecha: 2026-10-19. Cada punto sigue el formato Decisión / Por qué / Alternativ
 - **Por qué:** la constitución dice que las reglas detectan y el agente investiga. La spec fija los umbrales en las clarificaciones.
 
 - **Comprobado (2026-10-19):** OSM tiene bien etiquetados los puertos grandes, pero no los muelles urbanos ni los puertos pequeños. Con solo las zonas portuarias, quedan fuera ~4 de cada 10 barcos amarrados (detalle en T005). El borrador de `ports.geojson` sale de `scripts/ports-from-osm.ts`, y hay que revisarlo a mano antes de usarlo en el detector.
+- **Comprobado (2026-10-21):** muchos astilleros y terminales solo están en OSM como zona industrial. Con las zonas industriales que tocan la costa, además de muelles y dársenas, caen dentro 209 de 224 barcos amarrados y quedan dentro por error 6 de 135 fondeados. Casi todos los amarrados que faltan son fondeados que declaran un estado equivocado (detalle en T005).
 
 ## R9. Global Fishing Watch: una herramienta, nunca la verdad del eval
 

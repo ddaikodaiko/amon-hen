@@ -8,7 +8,7 @@ Where Vigía stands, what is left to do, and how it compares with the tools that
 
 **First real numbers (2026-10-20):** 115 investigations, about 14 s and $0 each, no failures left after three fixes. 113 came out as *out of receiver range* and one as *likely dark*, which a second run of the same case then reversed.
 
-**What that says:** the pipeline holds up; whether the verdicts are right is still unknown. Most cases sit at the Russian end of the gulf, which the Finnish receivers barely hear, and many are moored ships in ports the berth file still misses.
+**What that says:** the pipeline holds up; whether the verdicts are right is still unknown. Most cases sit at the Russian end of the gulf, which the Finnish receivers barely hear, and many were moored ships in ports the berth file missed. Since 2026-10-21 (T005) it covers 209 of 224 moored ships, so 35 of the 55 open cases that began moored would no longer become cases.
 
 ## What is left
 
@@ -16,7 +16,6 @@ Where Vigía stands, what is left to do, and how it compares with the tools that
 
 | Task | What | Needs |
 |---|---|---|
-| T005 | Finish `ports.geojson`: the berths missing in Helsinki, Tallinn, Kronstadt, St Petersburg and Ust-Luga produce false cases | Overpass (OpenStreetMap) answering |
 | T057 | Label cases blind until the stopping rule: 100 cases with at least 15 *likely dark*, or 300 | Days of recording, a person |
 | T058 | The eval: precision and recall against the 60-minute rule, with 95 % intervals | T057, the home PC |
 | T033 | Compare `qwen3:8b`, `llama3.1:8b` and `granite3.3:8b` on the same 10 cases | The home PC |
@@ -43,7 +42,6 @@ In order: the first two make the output trustworthy, the third makes it useful a
 
 - **A second AIS feed:** community receivers through aisstream.io (tried in T001), merged with Digitraffic. The Russian end, where most cases are, is exactly where one feed hears least.
 - **Satellite radar:** Global Fishing Watch publishes vessel detections from Sentinel-1 SAR through its API. A radar detection where a silent ship should be is the strongest evidence of a vessel running dark; none where it should be supports *out of range*.
-- The berth file (T005), so that ships in port stop becoming cases.
 
 **3. Detect more than silences**
 
