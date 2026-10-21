@@ -212,7 +212,7 @@
   const deg = (v: number, pos: string, neg: string) => `${Math.abs(v).toFixed(3)}° ${v >= 0 ? pos : neg}`;
 </script>
 
-<svelte:head><title>Map · Vigía</title></svelte:head>
+<svelte:head><title>Map · Amon Hen</title></svelte:head>
 
 <div class="map-page">
   <div class="map" bind:this={container}></div>

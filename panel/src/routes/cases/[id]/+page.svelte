@@ -77,10 +77,10 @@
   const blocked = $derived.by((): string | null => {
     const m = data.meta;
     if (m.mode === "replay") {
-      return "This is a recorded demo, so it is read-only. To analyse alerts, run Vigía live (bun run server) with Ollama serving qwen3:8b at VIGIA_LOCAL_URL, or with ANTHROPIC_API_KEY for the paid models.";
+      return "This is a recorded demo, so it is read-only. To analyse alerts, run Amon Hen live (bun run server) with Ollama serving qwen3:8b at VIGIA_LOCAL_URL, or with ANTHROPIC_API_KEY for the paid models.";
     }
     if (m.mode === "public") return "This is a public, read-only view.";
-    if (c.state === "discarded" || c.state === "detected") return "Vigía ignored this silence, so there is nothing to analyse.";
+    if (c.state === "discarded" || c.state === "detected") return "Amon Hen ignored this silence, so there is nothing to analyse.";
     if (profile === "local" && m.model.available === false) {
       const paid = m.paid_ready ? ", or pick a paid model" : "";
       return `The local model does not answer (${m.model.reason ?? "no reason given"}). Start Ollama at VIGIA_LOCAL_URL${paid}.`;
@@ -128,7 +128,7 @@
   );
 </script>
 
-<svelte:head><title>{c.name ?? c.mmsi} · Alerts · Vigía</title></svelte:head>
+<svelte:head><title>{c.name ?? c.mmsi} · Alerts · Amon Hen</title></svelte:head>
 
 <nav class="crumbs label" aria-label="Breadcrumb"><a href="/cases">Alerts</a> <span>/</span> <span class="mono">#{c.id}</span></nav>
 
@@ -192,7 +192,7 @@
         </p>
       {:else if c.discard_reason}
         <p class="verdict">Not analysed</p>
-        <p class="meaning">Vigía ignored this silence because {DISCARD_LABEL[c.discard_reason]}.</p>
+        <p class="meaning">Amon Hen ignored this silence because {DISCARD_LABEL[c.discard_reason]}.</p>
       {:else}
         <p class="verdict">Not analysed yet</p>
         {#if STATE_HELP[c.state]}<p class="meaning">{STATE_HELP[c.state]}</p>{/if}

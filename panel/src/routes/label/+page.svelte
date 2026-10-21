@@ -76,7 +76,7 @@
   const dark = (v: string) => v === "likely_dark";
 </script>
 
-<svelte:head><title>Label · Vigía</title></svelte:head>
+<svelte:head><title>Label · Amon Hen</title></svelte:head>
 <svelte:window {onkeydown} />
 
 <header class="head">
@@ -111,7 +111,7 @@
 </header>
 
 {#if !writable}
-  <p class="notice">This is a {data.meta.mode === "replay" ? "recorded demo" : "public view"}, so it is read-only: labels are saved only by a live Vigía, into its own database.</p>
+  <p class="notice">This is a {data.meta.mode === "replay" ? "recorded demo" : "public view"}, so it is read-only: labels are saved only by a live Amon Hen, into its own database.</p>
 {/if}
 
 {#if c === null}

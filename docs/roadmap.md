@@ -24,7 +24,7 @@ Where Vigía stands, what is left to do, and how it compares with the tools that
 | T032 | Global Fishing Watch events (gaps, encounters, loitering) as an agent tool | A GFW token |
 | T001, T002, T064, T065, T071 | Move the recorder, server and brief timer to the Raspberry Pi, running 24/7 | The Pi |
 | T075, T077, T049 | The eval set as a download, the final demo database, a clean-clone test | T058 |
-| T072, T078 | README figures and screenshot; the public demo on a VPS | T058, a VPS |
+| T072, T078 | README figures (the GIFs are in); the public demo on a VPS | T058, a VPS |
 
 ### Beyond v1: from a working pipeline to a trustworthy one
 

@@ -15,11 +15,11 @@
   const weekday = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "short", timeZone: "UTC" });
 </script>
 
-<svelte:head><title>Daily brief · Vigía</title></svelte:head>
+<svelte:head><title>Daily brief · Amon Hen</title></svelte:head>
 
 <h1>Daily brief</h1>
 <p class="lede">
-  Every morning at 08:00 Madrid time, Vigía writes up the 24 hours before: what the AI analyst found, what is still waiting, and whether our
+  Every morning at 08:00 Madrid time, Amon Hen writes up the 24 hours before: what the AI analyst found, what is still waiting, and whether our
   own feed held up.
 </p>
 

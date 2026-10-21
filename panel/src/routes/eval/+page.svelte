@@ -24,7 +24,7 @@
   const span = (i: Interval) => `left: ${i.low * 100}%; width: ${Math.max(0.5, (i.high - i.low) * 100)}%`;
 </script>
 
-<svelte:head><title>Accuracy · Vigía</title></svelte:head>
+<svelte:head><title>Accuracy · Amon Hen</title></svelte:head>
 
 <h1>Accuracy</h1>
 <p class="lede">

@@ -35,9 +35,9 @@ const config = loadConfig({ VIGIA_MODE: "replay", VIGIA_DB: dbPath });
 try {
   serve({ db, config, mode: "replay" });
 } catch (err) {
-  console.error(`Could not listen on port ${PORT}: ${err instanceof Error ? err.message : String(err)}. Is another Vigía running?`);
+  console.error(`Could not listen on port ${PORT}: ${err instanceof Error ? err.message : String(err)}. Is another Amon Hen running?`);
   process.exit(1);
 }
 const hours = ((range.end - range.start) / 3_600_000).toFixed(1);
-console.log(`Vigía demo: ${hours} h of the Gulf of Finland from ${new Date(range.start).toISOString().slice(0, 16)} UTC, replayed at 60×.`);
+console.log(`Amon Hen demo: ${hours} h of the Gulf of Finland from ${new Date(range.start).toISOString().slice(0, 16)} UTC, replayed at 60×.`);
 console.log(`Open http://localhost:${PORT}`);

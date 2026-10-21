@@ -42,7 +42,7 @@ description: "Tareas de Vigía v1, por historia de usuario"
   - `deploy/vigia-ingest.service`: unidad de usuario de systemd con `Restart=always` (con `loginctl enable-linger`, para que arranque sin sesión abierta).
   **Estado (2026-10-19):** mientras la Pi no esté, la grabadora corre en el portátil como servicio de usuario temporal (`systemctl --user status vigia-ingest-laptop`; se pierde al reiniciar el portátil). Desde las 17:24 UTC escribe también en `data/vigia.sqlite`. Lo de antes se importó con `--from-archive`.
 
-  La primera versión, contra aisstream (commit `806a157`), sirvió para medir que el Estrecho no daba datos suficientes (R7).
+  La primera versión, contra aisstream (commit `e399260`), sirvió para medir que el Estrecho no daba datos suficientes (R7).
   **Hecho:** graba en el portátil (prueba) y, con la Pi lista, como servicio en la Pi, que sigue grabando tras un `systemctl --user restart`. Mientras la Pi no esté, se puede dejar grabando el portátil para medir el volumen.
 - [ ] T002 [bloque] Con 24 h grabadas, medir:
   - mensajes por segundo (media y pico);
@@ -529,6 +529,11 @@ description: "Tareas de Vigía v1, por historia de usuario"
   - los límites y el aviso de proyecto educativo;
   - las atribuciones (Digitraffic con CC BY 4.0, GFW de uso no comercial, OSM con ODbL) y la licencia MIT.
   **Avance (2026-10-20):** `README.md` escrito, con cada afirmación comprobada contra el código: umbrales, herramientas, el límite de 50 nudos, la cita de pasos inexistentes y el prompt. La sección de cifras dice que aún no hay, hasta que haya informe de eval. Falta la captura o el GIF, que se hace sobre la demo de verdad (T077) para no enseñar los barcos sintéticos.
+  **Avance (2026-10-21):**
+  - El repo se publica como **Amon Hen**, que es el nombre visible en el README y el panel. Vigía queda como nombre de trabajo en el código, las variables y las specs.
+  - Los GIF del mapa y de un caso están en `docs/media/`. Se grabaron con Playwright sobre la grabación real del 19 de octubre, no sobre la demo (T077), así que no salen barcos sintéticos.
+  - El README dice qué hará el producto terminado y explica que, hasta T077, cada uno graba su propia demo.
+  - Faltan las cifras (T058).
 - [ ] T073 [clase] SC-008: revisar 10 expedientes al azar y anotar en `specs/001-vigia-v1/review-sc008.md` si cada veredicto se justifica con sus pruebas. Si no, ajustar `system.md`, lo que da una nueva `agent_version`.
   **Avance (2026-10-21):** cuatro pasadas con `qwen3:8b`, dos muestras de 10 más los dos `likely_dark`, sobre una copia de la base. **SC-008 no se cumple:** entre 3 y 6 de 10 se justifican del todo.
   - **Arreglado por el camino, con pruebas:**

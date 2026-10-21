@@ -22,7 +22,7 @@
   const now = Date.now();
 </script>
 
-<svelte:head><title>Alerts · Vigía</title></svelte:head>
+<svelte:head><title>Alerts · Amon Hen</title></svelte:head>
 
 <h1>Alerts</h1>
 <p class="lede">

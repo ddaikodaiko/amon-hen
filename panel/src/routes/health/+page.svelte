@@ -82,13 +82,13 @@
   const spanLabel = (s: number) => (s === 168 ? "7 days" : `${s} h`);
 </script>
 
-<svelte:head><title>Feed health · Vigía</title></svelte:head>
+<svelte:head><title>Feed health · Amon Hen</title></svelte:head>
 
 <header class="head">
   <div>
     <h1>Feed health</h1>
     <p class="lede">
-      Vigía hears ships through Fintraffic's shore receivers. This page shows whether that feed was reaching us. While it is down every
+      Amon Hen hears ships through Fintraffic's shore receivers. This page shows whether that feed was reaching us. While it is down every
       ship looks silent, so silences that overlap one of our own outages are ignored, never turned into alerts.
     </p>
   </div>

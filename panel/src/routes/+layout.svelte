@@ -46,12 +46,12 @@
 </script>
 
 <header class="bar">
-  <a class="brand" href="/" aria-label="Vigía, home">
+  <a class="brand" href="/" aria-label="Amon Hen, home">
     <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
       <path d="M10 1 19 10 10 19 1 10Z" fill="none" stroke="currentColor" stroke-width="1.6" />
       <circle cx="10" cy="10" r="2.6" fill="currentColor" />
     </svg>
-    <span class="word">VIGÍA</span>
+    <span class="word">AMON HEN</span>
     <span class="sub">Gulf of Finland · maritime watch</span>
   </a>
   <nav>
@@ -81,7 +81,7 @@
 </main>
 
 <footer>
-  <span>Educational project, no warranty. Vigía looks at ships, never at people.</span>
+  <span>Educational project, no warranty. Amon Hen looks at ships, never at people.</span>
   <span>AIS: Fintraffic / digitraffic.fi, CC BY 4.0 · Map data © OpenStreetMap contributors, ODbL</span>
 </footer>
 
