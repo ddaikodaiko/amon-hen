@@ -35,6 +35,16 @@ export const getNearby = defineTool({
          WHERE ts >= ? AND ts <= ? AND lat BETWEEN ? AND ? AND lon BETWEEN ? AND ? AND mmsi != ?`,
       )
       .all(from, to, lat - dLat, lat + dLat, lon - dLon, lon + dLon, mmsi);
+    // Minutes our own ingest was down are nobody's silence, as for the detector. A window that began
+    // inside an outage made every neighbour look silent (SC-008, review-sc008.md).
+    const outages = db
+      .query<{ start_ts: number; end_ts: number | null }, [number, number]>(
+        "SELECT start_ts, end_ts FROM outages WHERE start_ts < ? AND (end_ts IS NULL OR end_ts > ?)",
+      )
+      .all(to, from);
+    const down = (a: number, b: number) =>
+      outages.reduce((s, o) => s + Math.max(0, Math.min(b, o.end_ts ?? b) - Math.max(a, o.start_ts)), 0);
+    const silent = (a: number, b: number) => b - a - down(a, b);
     const track = db.query<Fix, [number, number, number]>(
       "SELECT ts, lat, lon, sog, cog, nav_status FROM positions WHERE mmsi = ? AND ts >= ? AND ts <= ? ORDER BY ts",
     );
@@ -45,12 +55,12 @@ export const getNearby = defineTool({
       const fixes = track.all(other, from, to);
       const closest = Math.min(...fixes.map((f) => distanceNm({ lat, lon }, f)));
       if (fixes.length === 0 || closest > radius_nm) continue;
-      let longest = Math.max(fixes[0]!.ts - from, to - fixes.at(-1)!.ts);
+      let longest = Math.max(silent(from, fixes[0]!.ts), silent(fixes.at(-1)!.ts, to));
       let jumps = false;
       for (let i = 1; i < fixes.length; i++) {
         const a = fixes[i - 1]!;
         const b = fixes[i]!;
-        longest = Math.max(longest, b.ts - a.ts);
+        longest = Math.max(longest, silent(a.ts, b.ts));
         if (impliedKnots(a, b, b.ts - a.ts) > CONFLICT_KNOTS) jumps = true;
       }
       vessels.push({
@@ -71,12 +81,21 @@ export const getNearby = defineTool({
       reporting_count: reporting,
       jumping_count: jumping,
     };
-    const where = `within ${radius_nm} nm, ${hhmm(from)}-${hhmm(to)} UTC`;
+    const downMin = Math.round(down(from, to) / 60_000);
+    const where =
+      `within ${radius_nm} nm, ${hhmm(from)}-${hhmm(to)} UTC` +
+      (downMin > 0 ? ` (our ingest was down ${downMin} min of it, not counted)` : "");
+    // With only the counts, a neighbour 0.2 nm away that kept reporting went unremarked in 2 of the
+    // 10 dossiers reviewed for SC-008 (review-sc008.md). The list is sorted, so find() is the nearest.
+    const nearest = (kept: boolean) => {
+      const v = vessels.find((x) => x.kept_reporting === kept);
+      return v === undefined ? "" : ` (the closest at ${v.distance_nm} nm)`;
+    };
     const summary =
       vessels.length === 0
         ? `No other vessel reported ${where}.`
-        : `${vessels.length} other vessel${vessels.length > 1 ? "s" : ""} ${where}: ${reporting} kept reporting, ` +
-          `${vessels.length - reporting} went silent for 10 min or more` +
+        : `${vessels.length} other vessel${vessels.length > 1 ? "s" : ""} ${where}: ${reporting} kept reporting${nearest(true)}, ` +
+          `${vessels.length - reporting} went silent for 10 min or more${nearest(false)}` +
           (jumping > 0 ? `; ${jumping} made impossible jumps.` : ".");
     return { summary, data };
   },

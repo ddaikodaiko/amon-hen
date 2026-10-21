@@ -1,4 +1,6 @@
 import { createHash } from "node:crypto";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import type { Profile, ProfileName } from "../config";
 import type { Database } from "../db";
 import { healthClosedUntil } from "../ingest/health";
@@ -40,10 +42,27 @@ interface CandidateRow {
   nav_status_start: number | null;
 }
 
-/** Hash of the prompt, the tool schemas and the profile: what makes two dossiers comparable. */
+/**
+ * The code behind what the model reads and how it is asked: the prompt, this briefing, the loop with
+ * its nudges and limits, the client, and each tool with the summaries it writes. Hashing only the
+ * tool schemas let a tool answer differently under the same version (SC-008, review-sc008.md). What
+ * the tools call outside src/agent (the coverage, the geometry) is left out.
+ */
+const VERSIONED = ["prompts", "tools", "investigate.ts", "loop.ts", "model.ts"];
+const sourceHash = (() => {
+  const h = createHash("sha256");
+  const files = VERSIONED.flatMap((p) => {
+    const path = join(import.meta.dir, p);
+    return statSync(path).isDirectory() ? readdirSync(path).map((f) => join(p, f)) : [p];
+  });
+  for (const f of files.sort()) h.update(f).update(readFileSync(join(import.meta.dir, f)));
+  return h.digest("hex");
+})();
+
+/** Hash of the agent's code, the tool schemas as sent and the profile: what makes two dossiers comparable. */
 export function agentVersion(client: ModelClient): string {
   const h = createHash("sha256");
-  h.update(systemPrompt);
+  h.update(sourceHash);
   h.update(JSON.stringify(toolDefinitions({ strict: client.strictTools })));
   h.update(`${client.profile}:${client.model}`);
   return h.digest("hex").slice(0, 12);
@@ -106,6 +125,7 @@ export async function investigate(db: Database, candidateId: number, deps: Inves
       system: systemPrompt,
       briefing: briefing(c, asOf),
       mmsi: c.mmsi,
+      gap: { start: c.gap_start, end: c.gap_end },
       firstIdx,
       now,
     });

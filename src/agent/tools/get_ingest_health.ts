@@ -10,7 +10,7 @@ export const getIngestHealth = defineTool({
     "messages, or disconnected) and the fewest messages received in any minute. If our ingest was down, " +
     "every vessel looks silent.",
   input: z.object({ from: instantInput, to: instantInput }),
-  run({ from, to }, { db }) {
+  run({ from, to }, { db, gap }) {
     if (to <= from) throw new ToolError("`to` must be after `from`");
     if (to - from > MAX_WINDOW_MS) throw new ToolError("the window is 48 h at most");
     const outages = db
@@ -33,9 +33,23 @@ export const getIngestHealth = defineTool({
     if (known === 0) return { summary: `Our ingest health for ${span} is not known.`, data };
     const summary =
       outages.length === 0
-        ? `Our ingest had no outage ${span}; it received at least ${data.min_msg_per_min} messages every minute.`
+        ? data.min_msg_per_min === 0
+          ? `Our ingest had no outage ${span}; its quietest minute had no messages, a drop of under 2 min.`
+          : `Our ingest had no outage ${span}; it received at least ${data.min_msg_per_min} messages every minute.`
         : `Our ingest had ${outages.length} outage${outages.length > 1 ? "s" : ""} ${span}: ` +
-          `${outages.map((o) => `${hhmm(o.start_ts)}-${o.end_ts === null ? "ongoing" : hhmm(o.end_ts)}`).join(", ")}.`;
+          `${outages.map((o) => `${hhmm(o.start_ts)}-${o.end_ts === null ? "ongoing" : hhmm(o.end_ts)}`).join(", ")}.` +
+          (gap === undefined ? "" : duringGap(outages, gap));
     return { summary, data };
   },
 });
+
+/**
+ * Asked for a window wider than the gap, the model took an outage before or after it for one during
+ * it in 4 of 12 dossiers reviewed for SC-008 (review-sc008.md).
+ */
+function duringGap(outages: { start_ts: number; end_ts: number | null }[], gap: { start: number; end: number | null }): string {
+  const end = gap.end ?? Number.POSITIVE_INFINITY;
+  const overlap = outages.reduce((s, o) => s + Math.max(0, Math.min(end, o.end_ts ?? end) - Math.max(gap.start, o.start_ts)), 0);
+  const silence = `the silence under investigation (${hhmm(gap.start)}-${gap.end === null ? "ongoing" : hhmm(gap.end)})`;
+  return overlap === 0 ? ` None of it during ${silence}.` : ` ${Math.round(overlap / 60_000)} min of it during ${silence}.`;
+}

@@ -19,7 +19,7 @@ Where Vigía stands, what is left to do, and how it compares with the tools that
 | T057 | Label cases blind until the stopping rule: 100 cases with at least 15 *likely dark*, or 300 | Days of recording, a person |
 | T058 | The eval: precision and recall against the 60-minute rule, with 95 % intervals | T057, the home PC |
 | T033 | Compare `qwen3:8b`, `llama3.1:8b` and `granite3.3:8b` on the same 10 cases | The home PC |
-| T073 | Review 10 dossiers at random: is each verdict backed by its evidence? | — |
+| T073 | Review 10 dossiers at random: is each verdict backed by its evidence? Four passes done with `qwen3:8b`: not yet (3 to 6 of 10), and six tool bugs fixed on the way | A decision on the local model's temperature, T033 |
 | T074 | The paid comparison (Haiku and Sonnet, €10 cap) on the same sample | A budget decision |
 | T032 | Global Fishing Watch events (gaps, encounters, loitering) as an agent tool | A GFW token |
 | T001, T002, T064, T065, T071 | Move the recorder, server and brief timer to the Raspberry Pi, running 24/7 | The Pi |

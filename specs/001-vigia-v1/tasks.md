@@ -530,6 +530,15 @@ description: "Tareas de Vigía v1, por historia de usuario"
   - las atribuciones (Digitraffic con CC BY 4.0, GFW de uso no comercial, OSM con ODbL) y la licencia MIT.
   **Avance (2026-10-20):** `README.md` escrito, con cada afirmación comprobada contra el código: umbrales, herramientas, el límite de 50 nudos, la cita de pasos inexistentes y el prompt. La sección de cifras dice que aún no hay, hasta que haya informe de eval. Falta la captura o el GIF, que se hace sobre la demo de verdad (T077) para no enseñar los barcos sintéticos.
 - [ ] T073 [clase] SC-008: revisar 10 expedientes al azar y anotar en `specs/001-vigia-v1/review-sc008.md` si cada veredicto se justifica con sus pruebas. Si no, ajustar `system.md`, lo que da una nueva `agent_version`.
+  **Avance (2026-10-21):** cuatro pasadas con `qwen3:8b`, dos muestras de 10 más los dos `likely_dark`, sobre una copia de la base. **SC-008 no se cumple:** entre 3 y 6 de 10 se justifican del todo.
+  - **Arreglado por el camino, con pruebas:**
+    - `get_track` incluye el segundo entero de `to` y ya no pierde la posición que cierra el gap.
+    - `get_nearby` no cuenta nuestras caídas como silencio de los vecinos (también salía en el panel) y da la distancia del más cercano que siguió emitiendo y la del más cercano que calló.
+    - `get_ingest_health` conoce el gap y dice si una caída lo toca.
+    - `get_coverage` avisa cuando nada está medido.
+    - `agent_version` cubre el código de `src/agent`, no solo los esquemas.
+    - El prompt fijo baja a 2.253 tokens.
+  - **Pendiente:** decidir la temperatura del perfil local (ahora la de `qwen3:8b`, 0,6: 3 de 12 casos cambiaron de veredicto con las mismas pruebas) y repetir la revisión con el modelo que salga de T033.
 - [ ] T074 [bloque] La comparación de pago (los 10 €): con `VIGIA_BUDGET_USD=10`, `bun run eval --profile haiku` y `--profile sonnet` sobre la misma muestra. Comprobar que con Haiku el coste medio por caso es de 0,01 $ o menos (SC-004).
 - [ ] T075 [clase] Preparar el conjunto del eval (la grabación larga y las etiquetas) como descarga aparte, con `bun run record --kind eval` y la atribución de T045. No se publica sin la confirmación de Marcos.
 - [x] T076 [clase] Repasar `quickstart.md` de principio a fin y corregir lo que no cuadre.

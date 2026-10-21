@@ -71,7 +71,7 @@ Todo se guarda en una base SQLite (`bun:sqlite`, modo WAL). Las horas son UTC en
 | input_tokens, output_tokens | INTEGER | suma de todos los pasos |
 | cost_usd | REAL | 0 con el perfil local |
 | duration_ms | INTEGER | |
-| agent_version | TEXT | hash del prompt, las herramientas y el perfil |
+| agent_version | TEXT | hash del código que decide lo que lee el modelo (el prompt, el resumen del caso, el bucle, el cliente y las herramientas con lo que devuelven), de los esquemas tal como se mandan y del perfil |
 | created_at | INTEGER | |
 
 ### evidence: pruebas citadas (FR-008, FR-016)

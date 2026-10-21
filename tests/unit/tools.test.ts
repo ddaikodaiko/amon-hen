@@ -83,6 +83,17 @@ describe("get_track", () => {
     expect(r.data.positions).toBe(21);
   });
 
+  test("`to` takes in its whole second: the gap as the briefing states it keeps the fix that ends it", async () => {
+    const db = openDb(":memory:");
+    vessel(db, 230000001);
+    const insert = db.query("INSERT INTO positions (mmsi, ts, lat, lon, sog, cog, nav_status) VALUES (?, ?, 59.9, 30.2, 0, NULL, 5)");
+    insert.run(230000001, T0 + 522);
+    insert.run(230000001, T0 + 36 * MIN + 858);
+    const r = ok(await runTool("get_track", { mmsi: 230000001, from: "2026-10-19T12:00:00Z", to: "2026-10-19T12:36:00Z" }, ctxFor(db)));
+    expect(r.data.positions).toBe(2);
+    expect(r.data.silences).toEqual([{ from: "2026-10-19T12:00:00.522Z", to: "2026-10-19T12:36:00.858Z", minutes: 36 }]);
+  });
+
   test("more than 6 hours, or `to` before `from`, is an error the model can fix", async () => {
     const db = openDb(":memory:");
     expect(await runTool("get_track", { mmsi: 230000001, from: iso(0), to: iso(361) }, ctxFor(db))).toMatchObject({ isError: true });
@@ -134,6 +145,30 @@ describe("get_ingest_health", () => {
     expect(quiet.summary).toBe("Our ingest had no outage 12:30-13:00 UTC; it received at least 2030 messages every minute.");
   });
 
+  test("against the gap under investigation: an outage before it is not one during it", async () => {
+    const db = openDb(":memory:");
+    const minute = db.query("INSERT INTO ingest_minutes (minute_ts, connected, msg_count) VALUES (?, 1, ?)");
+    for (let m = 0; m < 60; m++) minute.run(T0 + m * MIN, m < 15 ? 0 : 2500);
+    db.query("INSERT INTO outages (start_ts, end_ts, cause) VALUES (?, ?, 'disconnected')").run(T0 - 60 * MIN, T0 + 15 * MIN);
+    const before = { ...ctxFor(db), gap: { start: T0 + 17 * MIN, end: T0 + 56 * MIN } };
+    const r = ok(await runTool("get_ingest_health", { from: iso(0), to: iso(60) }, before));
+    expect(r.summary).toBe(
+      "Our ingest had 1 outage 12:00-13:00 UTC: 11:00-12:15. None of it during the silence under investigation (12:17-12:56).",
+    );
+    const during = { ...ctxFor(db), gap: { start: T0 + 5 * MIN, end: T0 + 56 * MIN } };
+    expect(ok(await runTool("get_ingest_health", { from: iso(0), to: iso(60) }, during)).summary).toEndWith(
+      " 10 min of it during the silence under investigation (12:05-12:56).",
+    );
+  });
+
+  test("a minute with no messages but no outage is a short drop, not \"at least 0 messages\"", async () => {
+    const db = openDb(":memory:");
+    const minute = db.query("INSERT INTO ingest_minutes (minute_ts, connected, msg_count) VALUES (?, 1, ?)");
+    for (let m = 0; m < 60; m++) minute.run(T0 + m * MIN, m === 38 ? 0 : 2600);
+    const r = ok(await runTool("get_ingest_health", { from: iso(0), to: iso(60) }, ctxFor(db)));
+    expect(r.summary).toBe("Our ingest had no outage 12:00-13:00 UTC; its quietest minute had no messages, a drop of under 2 min.");
+  });
+
   test("with no health recorded it says so", async () => {
     const r = ok(await runTool("get_ingest_health", { from: iso(0), to: iso(60) }, ctxFor(openDb(":memory:"))));
     expect(r.summary).toBe("Our ingest health for 12:00-13:00 UTC is not known.");
@@ -155,6 +190,17 @@ describe("get_coverage", () => {
     const withIt = ok(await runTool("get_coverage", point, ctxFor(db, 230000003)));
     expect(withIt.data.ratio as number).toBeLessThan(1);
     expect(without.summary).toContain("(too small a sample)");
+    expect(without.summary).toContain("Too little to tell whether reception there is good or poor.");
+  });
+
+  test("a cell no vessel under way crossed is not measured, which is not poor reception", async () => {
+    const db = openDb(":memory:");
+    computeCoverage(db, T0 + 60 * MIN);
+    const r = ok(await runTool("get_coverage", { lat: 59.9, lon: 30.2, hour_utc: 10 }, ctxFor(db)));
+    expect(r.data).toMatchObject({ ratio: null, expected_min: 0, neighbors_avg_ratio: null });
+    expect(r.summary).toBe(
+      "Coverage: no vessel under way crossed this cell at 10 UTC in the last 7 days; nor around it. Too little to tell whether reception there is good or poor.",
+    );
   });
 
   test("a point outside the region is an error", async () => {
@@ -184,7 +230,27 @@ describe("get_nearby", () => {
       [230000003, false],
       [230000004, true],
     ]);
-    expect(r.summary).toBe("3 other vessels within 10 nm, 12:10-12:50 UTC: 2 kept reporting, 1 went silent for 10 min or more; 1 made impossible jumps.");
+    expect(r.summary).toBe(
+      "3 other vessels within 10 nm, 12:10-12:50 UTC: 2 kept reporting (the closest at 0.8 nm), " +
+        "1 went silent for 10 min or more (the closest at 1.2 nm); 1 made impossible jumps.",
+    );
+    const nearest = (kept: boolean) =>
+      Math.min(...(r.data.vessels as { distance_nm: number; kept_reporting: boolean }[]).filter((v) => v.kept_reporting === kept).map((v) => v.distance_nm));
+    expect([nearest(true), nearest(false)]).toEqual([0.8, 1.2]);
+  });
+
+  test("minutes our ingest was down are not the neighbours' silence", async () => {
+    const db = openDb(":memory:");
+    vessel(db, 230000002);
+    vessel(db, 230000003);
+    // Nothing arrived from anyone from 12:00 to 12:12, our outage; then one reported throughout and
+    // the other went silent for 15 min.
+    sail(db, 230000002, 59.82, 24.0, 60, [0, 12]);
+    sail(db, 230000003, 59.78, 24.0, 60, [0, 27]);
+    db.query("INSERT INTO outages (start_ts, end_ts, cause) VALUES (?, ?, 'disconnected')").run(T0 - 30 * MIN, T0 + 12 * MIN);
+    const r = ok(await runTool("get_nearby", { lat: 59.8, lon: 24.1, at: iso(30), window_min: 30 }, ctxFor(db)));
+    expect(r.data).toMatchObject({ reporting_count: 1, silent_count: 1 });
+    expect(r.summary).toStartWith("2 other vessels within 10 nm, 12:00-12:59 UTC (our ingest was down 12 min of it, not counted): 1 kept reporting");
   });
 
   test("the window stops at the newest data: the minutes after it are not silence", async () => {

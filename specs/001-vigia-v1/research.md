@@ -146,7 +146,7 @@ Fecha: 2026-10-19. Cada punto sigue el formato Decisión / Por qué / Alternativ
 - **Decisión:**
   - Se calculan la precisión, la exhaustividad y la matriz de confusión de *apagado probable* frente al resto, para el agente y para la regla de 60 min.
   - Los intervalos de confianza del 95 % son de **Wilson**, implementados a mano.
-  - `bun run eval --profile <local|haiku|sonnet>` reinvestiga los casos etiquetados con ese perfil, respetando el tope, y guarda el informe con `agent_version`, que es un hash del prompt, las herramientas y el perfil.
+  - `bun run eval --profile <local|haiku|sonnet>` reinvestiga los casos etiquetados con ese perfil, respetando el tope, y guarda el informe con `agent_version`, que es un hash del prompt, las herramientas (también lo que devuelven, no solo su esquema) y el perfil.
   - Las etiquetas *indeterminable* se excluyen de la precisión y la exhaustividad, y se informa de cuántas son.
   - La población son los candidatos no descartados. El informe dice cuántos se descartaron, por motivo.
   - Se aplica la regla de parada de FR-021.

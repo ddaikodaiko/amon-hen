@@ -59,6 +59,8 @@ export interface LoopConfig {
   briefing: string;
   /** The vessel under investigation. */
   mmsi: number;
+  /** The gap under investigation. */
+  gap?: { start: number; end: number | null };
   /** Index of the first step, when this run continues a trace (escalation). */
   firstIdx?: number;
   now?: () => number;
@@ -201,7 +203,7 @@ export async function runLoop(cfg: LoopConfig): Promise<{ end: LoopEnd; steps: T
         continue;
       }
       const t1 = performance.now();
-      const r = await runTool(use.name, use.input, { db: cfg.db, mmsi: cfg.mmsi, citable });
+      const r = await runTool(use.name, use.input, { db: cfg.db, mmsi: cfg.mmsi, gap: cfg.gap, citable });
       const duration_ms = Math.round(performance.now() - t1);
       if (r.isError) {
         const idx = push({ kind: "error", tool: use.name, input_json, output_summary: r.summary, output_json: null, duration_ms });

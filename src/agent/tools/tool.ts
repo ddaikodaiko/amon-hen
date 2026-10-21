@@ -8,6 +8,8 @@ export interface Investigation {
   db: Database;
   /** The vessel under investigation: its own minutes are left out of coverage (R6). */
   mmsi: number;
+  /** The gap under investigation, if there is one: the tools can say how what they found sits against it. */
+  gap?: { start: number; end: number | null };
   /** Trace steps a verdict may cite: the tool results that succeeded so far. */
   citable: ReadonlySet<number>;
 }

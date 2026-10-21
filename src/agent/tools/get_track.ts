@@ -37,11 +37,14 @@ export const getTrack = defineTool({
   run({ mmsi, from, to }, { db }) {
     if (to <= from) throw new ToolError("`to` must be after `from`");
     if (to - from > MAX_WINDOW_MS) throw new ToolError("the window is 6 h at most; ask for the part around the gap");
+    // The briefing gives times to the second and fixes keep their milliseconds: `to` takes in its
+    // whole second, or the gap asked for as the briefing states it would lose the fix that ends it.
+    const until = Math.floor(to / 1000) * 1000 + 999;
     const fixes = db
       .query<Fix, [number, number, number]>(
         "SELECT ts, lat, lon, sog, cog, nav_status FROM positions WHERE mmsi = ? AND ts >= ? AND ts <= ? ORDER BY ts",
       )
-      .all(mmsi, from, to);
+      .all(mmsi, from, until);
     if (fixes.length === 0) {
       return { summary: `No positions from ${mmsi} between ${hhmm(from)} and ${hhmm(to)} UTC.`, data: { points: [], positions: 0 } };
     }

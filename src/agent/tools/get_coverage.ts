@@ -38,6 +38,8 @@ export const getCoverage = defineTool({
       nExpected === 0
         ? "nor around it"
         : `the cells around it: ${pct(nRatio)} of ${nExpected}` + (data.neighbors_sample_ok ? "" : " (too small a sample)");
-    return { summary: `Coverage: ${here}; ${near}.`, data };
+    // Read as "poor coverage" in 6 of the 10 dossiers reviewed for SC-008 (review-sc008.md).
+    const unknown = cell.sample_ok || data.neighbors_sample_ok ? "" : " Too little to tell whether reception there is good or poor.";
+    return { summary: `Coverage: ${here}; ${near}.${unknown}`, data };
   },
 });
