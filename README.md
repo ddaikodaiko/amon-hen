@@ -97,7 +97,7 @@ The agent is measured on cases labelled by hand, blind: the labelling view shows
 
 ## Roadmap
 
-What is left for v1, what would make it trustworthy beyond it, and how it compares with Windward, Kpler, Skylight and Global Fishing Watch: [`docs/roadmap.md`](docs/roadmap.md).
+The next steps, in Spanish: [`docs/pendientes.md`](docs/pendientes.md). What is left for v1, what would make it trustworthy beyond it, and how it compares with Windward, Kpler, Skylight and Global Fishing Watch: [`docs/roadmap.md`](docs/roadmap.md).
 
 ## Running it live
 
