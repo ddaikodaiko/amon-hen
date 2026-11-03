@@ -12,6 +12,8 @@ Ships broadcast their position over AIS. When one goes silent, the usual reason 
 
 *Amon Hen is the Hill of Sight in Tolkien, where whoever sat on its seat could see far across the land. The code, the specs and the roadmap still use the project's working name, Vigía.*
 
+**Stack:** TypeScript · Bun · Anthropic SDK (tool use on the Messages API) · Ollama (`qwen3:8b`) · SQLite (`bun:sqlite`) · SvelteKit · MapLibre GL
+
 ## See it work
 
 Above, the map replays the real recording of 19 October 2026 at 300 times real speed. Ships move along the gulf with their last 20 minutes of route. Each column is a ship that went silent, taller the longer the silence, coloured by the AI analyst's verdict once it has one. Most of them gather at the Russian end, which the Finnish receivers hear worst.
