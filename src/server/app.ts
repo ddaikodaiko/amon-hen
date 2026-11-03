@@ -1,5 +1,6 @@
 import { existsSync, statSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
+import { monthOf } from "../agent/budget";
 import { type AppContext, errorResponse, HttpError, matchPath, type Route } from "./http";
 import { BRIEF_ROUTES } from "./routes/briefs";
 import { CANDIDATE_ROUTES } from "./routes/candidates";
@@ -15,7 +16,7 @@ const metaRoute: Route = {
   method: "GET",
   path: "/api/meta",
   handler: ({ app }) => {
-    const month = new Date().toISOString().slice(0, 7);
+    const month = monthOf((app.now ?? Date.now)());
     const spent =
       app.db.query<{ spent_usd: number }, [string]>("SELECT spent_usd FROM budget WHERE month = ?").get(month)
         ?.spent_usd ?? 0;

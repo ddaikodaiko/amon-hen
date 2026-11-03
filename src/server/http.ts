@@ -11,6 +11,12 @@ export interface AppContext {
   model?: ModelStatus;
   /** Takes the investigations asked for from the panel; only in live mode. */
   investigator?: Investigator;
+  /**
+   * The clock for what the panel reports about money, so it matches the month the
+   * investigations recorded their spend in. Defaults to `Date.now`; tests and the replay
+   * pass the time of the data.
+   */
+  now?: () => number;
 }
 
 export interface RequestContext {

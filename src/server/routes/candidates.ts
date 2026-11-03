@@ -184,7 +184,7 @@ const reinvestigate: Route = {
     const profile = app.config.profiles[body.profile];
     if (profile.paid) {
       if (profile.apiKey === undefined) throw new HttpError(409, "no_api_key", `the ${profile.name} profile needs ANTHROPIC_API_KEY`);
-      const spent = spentIn(app.db, monthOf(Date.now()));
+      const spent = spentIn(app.db, monthOf((app.now ?? Date.now)()));
       if (spent >= app.config.budgetUsd) {
         throw new HttpError(409, "over_budget", `this month's cap of ${app.config.budgetUsd} USD is spent (${spent.toFixed(4)} USD)`);
       }
