@@ -47,6 +47,38 @@ Si preguntan por la precisión, la respuesta es: "aún no está medida; este es 
 - La comparación de pago con Haiku y Sonnet, con un tope de 10 € (T074). Necesita que se decida el presupuesto.
 - La herramienta de Global Fishing Watch (T032). Necesita un token gratuito.
 
+## Concurso: Create AI Agents Championship (Dubái)
+
+Añadido el 2026-10-24. Amon Hen se presenta cuando la v1 esté completa, en la categoría **Best Youth AI Agent** (menos de 21 años al inscribirse).
+
+**Lo esencial:** lo organiza la Dubai Chamber of Digital Economy ([web](https://dubaichamberdigital.com/en/create-ai-agents)). Cada categoría da 150.000 $ en ayudas. Es gratis, abierto a cualquier país, y todo va en inglés. La inscripción y la entrega cierran en **enero de 2027**, sin día exacto en la web. En enero salen 24 semifinalistas; en marzo hay un pitch de semifinal y se eligen 12 finalistas; la final es en Dubái la primera semana de mayo, con el agente funcionando en directo.
+
+**El plazo no espera a la v1.** Si en enero no está completa, se presenta igual: las bases admiten un prototipo o un MVP temprano. Lo que más pesa, y depende de la v1, son las cifras del eval (paso 5 del camino crítico) y la demo pública (paso 8).
+
+### Ahora
+
+1. **Inscribirse.** Es gratis, no compromete a nada y da acceso a los talleres y mentorías de noviembre y diciembre.
+2. **Preguntar a la organización** lo que las bases no aclaran:
+   - Para cobrar hay que tener o crear una empresa en Dubái con licencia comercial (punto 1.3 de las bases). La ayuda es para terminar el agente y montar allí el negocio, y no se puede cambiar por dinero (4.1-4.3). ¿Se aplica igual en Youth?
+   - El viaje y la estancia corren por cuenta propia (10.1). ¿La semifinal de marzo es presencial?
+   - Los finalistas pasan un control de seguridad (punto 9).
+3. **Mirar si la final de mayo choca con la FCT.**
+
+### Cuando la v1 esté completa
+
+| # | Entregable (en inglés) | Se parte de |
+|---|---|---|
+| 1 | Informe resumen, obligatorio (2.3): la idea y qué hace cada pieza del agente | El README |
+| 2 | Pitch deck: el problema, el agente, las cifras del eval, la comparativa, para quién es, qué se haría con la ayuda y el equipo | El README, `roadmap.md` y el borrador en claude.ai (portada y problema): https://claude.ai/artifact/FnhWjJ5efcz67DAxro2p9R |
+| 3 | Vídeo de demo: el replay del mapa, un caso de principio a fin y el eval | Los GIF de `docs/media/` y `bun run demo` |
+| 4 | Prototipo: el repo y la demo pública | T078 |
+| 5 | Validación: hablar con 3 a 5 analistas (puertos, aseguradoras marítimas, compliance) y anotar qué dicen. El concurso pide "customer need, business potential and measurable impact" | — |
+
+### Antes de enviar
+
+- **Nada de política.** Las bases excluyen el contenido político (2.5). Se presenta como un agente que distingue un fallo de cobertura de un transpondedor apagado, sin hablar de sanciones ni de flotas. Repasar el README y `roadmap.md` con ese criterio.
+- **El nombre.** "Amon Hen" viene de Tolkien, y las bases no admiten imitar obras ajenas (2.4). Además, si se gana, el proyecto pasa a ser una empresa. Valorar presentarlo como Vigía.
+
 ## Después de la v1
 
 1. **Saber cuándo fiarse:** la consistencia entre ejecuciones y la calibración de la confianza.
@@ -61,3 +93,18 @@ Si preguntan por la precisión, la respuesta es: "aún no está medida; este es 
 ## Limpieza local
 
 - `refs/original/` guarda el historial de antes de quitar las líneas de coautor (2026-10-21). No se sube a GitHub. Cuando ya no haga falta: `git for-each-ref --format='%(refname)' refs/original | xargs -n1 git update-ref -d`.
+
+## Hecho el 2026-11-03
+
+- **Notas internas fuera de la raíz** (era el punto 3 de "Antes de meterlo en el CV" y R13 de la
+  auditoría de GitHub): `consejo.md`, `idea.md` e `investigacion.md` están en `docs/proceso/`, con
+  un README que las presenta como notas de proceso. Siguen en el historial de git. `CLAUDE.md` se
+  queda en la raíz: solo apunta a `specs/001-vigia-v1/plan.md` y es lo que espera la herramienta.
+- **Test que dependía del mes real:** el de "over the cap" pasaba en octubre y fallaba en
+  noviembre, porque grababa el gasto con el reloj de los datos (`now: () => END`) y lo leía con
+  `Date.now()`. Ahora el servidor acepta un reloj (`AppContext.now`) y `/api/meta` y el tope de
+  gasto de `reinvestigate` lo usan. `bun run check`: 227 de 227 y `tsc` limpio (antes 226/1).
+- **La contradicción del GIF de BALT FLOT 4** (punto 2): no era un fallo de datos, eran dos
+  ventanas distintas. `get_nearby` devuelve ahora la ventana que usó (`window`), el panel la
+  muestra junto al recuento ("between 07:39 and 08:25 UTC") y un test comprueba que la del panel
+  empieza en el gap y no pasa de una hora. **Queda regrabar el GIF**, y eso necesita datos nuevos.
