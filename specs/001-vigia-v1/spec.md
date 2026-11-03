@@ -3,7 +3,7 @@
 **Feature Branch**: `001-vigia-v1`
 **Created**: 2026-10-19
 **Status**: Draft
-**Input**: idea.md (alcance v1 tras el consejo), consejo.md e investigacion.md. Un panel que sigue el AIS del golfo de Finlandia, registra la salud de su propia ingesta, mide la cobertura, detecta gaps con reglas y pone a un agente de IA a investigar cada uno con herramientas, dejando un expediente con veredicto, pruebas y traza. Incluye etiquetado manual, un eval contra la regla ingenua, un brief diario y un modo replay sin keys.
+**Input**: `docs/proceso/idea.md` (alcance v1 tras el consejo), `docs/proceso/consejo.md` e `docs/proceso/investigacion.md`. Un panel que sigue el AIS del golfo de Finlandia, registra la salud de su propia ingesta, mide la cobertura, detecta gaps con reglas y pone a un agente de IA a investigar cada uno con herramientas, dejando un expediente con veredicto, pruebas y traza. Incluye etiquetado manual, un eval contra la regla ingenua, un brief diario y un modo replay sin keys.
 
 ## Clarifications
 
