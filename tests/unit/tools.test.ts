@@ -223,7 +223,13 @@ describe("get_nearby", () => {
     ); // 36 nm away for 15 s: a jump
     sail(db, 230000005, 59.3, 24.0, 60); // 30 nm south
     const r = ok(await runTool("get_nearby", { lat: 59.8, lon: 24.1, at: iso(30), window_min: 20 }, ctxFor(db)));
-    expect(r.data).toMatchObject({ reporting_count: 2, silent_count: 1, jumping_count: 1, listed: 3 });
+    expect(r.data).toMatchObject({
+      reporting_count: 2,
+      silent_count: 1,
+      jumping_count: 1,
+      listed: 3,
+      window: { from: T0 + 10 * MIN, to: T0 + 50 * MIN },
+    });
     const listed = (r.data.vessels as { mmsi: number; kept_reporting: boolean }[]).map((v) => [v.mmsi, v.kept_reporting]);
     expect(listed.sort()).toEqual([
       [230000002, true],

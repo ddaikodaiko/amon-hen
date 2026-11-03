@@ -64,7 +64,7 @@ export async function caseContext(db: Database, id: number): Promise<Api.CaseCon
     getNearby.input.parse({ lat: start.lat, lon: start.lon, at: iso(c.gap_start + half * 60_000), radius_nm: NEARBY_RADIUS_NM, window_min: half }),
     { db, mmsi: c.mmsi, citable: new Set() },
   );
-  const n = nearby.data as { reporting_count: number; silent_count: number };
+  const n = nearby.data as { reporting_count: number; silent_count: number; window: { from: number; to: number } };
 
   // Our own outages are not the vessel's silences.
   const others = `FROM candidates WHERE mmsi = ? AND id != ? AND coalesce(discard_reason, '') != 'own_outage'`;
@@ -83,7 +83,13 @@ export async function caseContext(db: Database, id: number): Promise<Api.CaseCon
     speed_before_kn: before?.sog ?? null,
     coverage:
       cov === null ? null : { ratio: cov.ratio === null ? null : round(cov.ratio, 2), expected_min: cov.expected_min, enough_data: cov.sample_ok },
-    nearby: { total: n.reporting_count + n.silent_count, kept_reporting: n.reporting_count, radius_km: Math.round(NEARBY_RADIUS_NM * KM_PER_NM) },
+    nearby: {
+      total: n.reporting_count + n.silent_count,
+      kept_reporting: n.reporting_count,
+      radius_km: Math.round(NEARBY_RADIUS_NM * KM_PER_NM),
+      from: n.window.from,
+      to: n.window.to,
+    },
     other_silences: other.map((o) => ({
       id: o.id,
       gap_start: o.gap_start,

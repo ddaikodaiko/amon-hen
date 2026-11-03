@@ -80,6 +80,9 @@ export const getNearby = defineTool({
       silent_count: vessels.length - reporting,
       reporting_count: reporting,
       jumping_count: jumping,
+      // The window actually used, clamped to the newest data. The panel shows it next to its own
+      // count, so a different window in a dossier is not read as a contradiction.
+      window: { from, to },
     };
     const downMin = Math.round(down(from, to) / 60_000);
     const where =

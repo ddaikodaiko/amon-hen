@@ -42,8 +42,11 @@ export interface CaseContext {
   speed_before_kn: number | null;
   /** How well the receivers hear that spot at that hour, over the last 7 days, this vessel left out. */
   coverage: { ratio: number | null; expected_min: number; enough_data: boolean } | null;
-  /** Other vessels near where it went silent, during the first hour of the silence at most. */
-  nearby: { total: number; kept_reporting: number; radius_km: number };
+  /**
+   * Other vessels near where it went silent, during the first hour of the silence at most.
+   * `from`/`to` are the window it counts: the agent picks its own, so the dossier's count can differ.
+   */
+  nearby: { total: number; kept_reporting: number; radius_km: number; from: number; to: number };
   /** Its other silences in the recording, newest first, our own outages left out. */
   other_silences: { id: number; gap_start: number; duration_min: number | null }[];
   other_silences_total: number;

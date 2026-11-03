@@ -38,6 +38,11 @@ describe("case context", () => {
     // Its lane-mates kept reporting while it was silent.
     expect(c.nearby.total).toBeGreaterThan(0);
     expect(c.nearby.kept_reporting).toBeGreaterThan(0);
+    // The panel says which window it counts, so its count and the dossier's can differ and be read
+    // as what they are: the first hour of the silence at most (pendientes.md, BALT FLOT 4).
+    const gap = db.query<{ gap_start: number }, [number]>("SELECT gap_start FROM candidates WHERE id = ?").get(id(230000101))!;
+    expect(c.nearby.from).toBe(gap.gap_start);
+    expect(c.nearby.to - c.nearby.from).toBeLessThanOrEqual(60 * 60_000);
     expect(c.other_silences_total).toBe(0);
     // Three hours before the gap to two after it.
     expect(c.track[0]![0]).toBeGreaterThanOrEqual(at(100) - 30_000 - 3 * 3_600_000);

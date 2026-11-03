@@ -1,5 +1,8 @@
 import type { CaseContext } from "./api";
-import { NAV_STATUS, placeText } from "./format";
+import { NAV_STATUS, placeText, utc } from "./format";
+
+/** 07:39 from a timestamp: the day is already on the page. */
+const clock = (ts: number) => utc(ts).slice(11);
 
 // What the data says about a silence, as key facts a newcomer can read: a label, a value, and a
 // note on what it usually means. Only facts, no verdict: the labelling view shows them too, and
@@ -96,11 +99,14 @@ export function factsOf(g: Gap, x: CaseContext): Fact[] {
   }
 
   const n = x.nearby;
+  // The window is said out loud: the AI analyst picks its own, so its count in the dossier can
+  // differ from this one without either being wrong.
+  const when = `${clock(n.from)} and ${clock(n.to)} UTC`;
   if (n.total === 0) {
     facts.push({
       label: "Ships around it",
       value: "None",
-      note: `No other ship within ${n.radius_km} km to compare with.`,
+      note: `No other ship within ${n.radius_km} km between ${when} to compare with.`,
       tone: "neutral",
     });
   } else {
@@ -110,10 +116,10 @@ export function factsOf(g: Gap, x: CaseContext): Fact[] {
       value: `${n.kept_reporting} of ${n.total} kept transmitting`,
       note:
         share >= 0.7
-          ? `Most ships within ${n.radius_km} km kept transmitting, so reception was working there.`
+          ? `Of the ships within ${n.radius_km} km between ${when} most kept transmitting: reception was working there.`
           : share <= 0.3
-            ? `Most ships within ${n.radius_km} km went quiet too: probably a reception problem, not this ship.`
-            : `Ships within ${n.radius_km} km were mixed: some kept transmitting, some went quiet.`,
+            ? `Of the ships within ${n.radius_km} km between ${when} most went quiet too: probably a reception problem, not this ship.`
+            : `Ships within ${n.radius_km} km between ${when} were mixed: some kept transmitting, some went quiet.`,
       tone: share >= 0.7 ? "notable" : share <= 0.3 ? "calm" : "neutral",
     });
   }
